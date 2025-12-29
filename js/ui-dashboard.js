@@ -139,7 +139,7 @@ export function renderDashboard() {
         return false;
     });
 
-    // 2. Atualiza Badge Global de Atraso (Header)
+    // 2. Atualiza Badge Global de Atraso (Header) - PRIORIDADE 2
     if (delayBadge && delayCount) {
         if (maxDelayDays > 0) {
             delayBadge.style.display = 'flex';
@@ -198,12 +198,29 @@ export function renderDashboard() {
              list.innerHTML = `<div class="dash-empty-state">Foque nos atrasados acima!</div>`;
         }
     } else {
-        list.innerHTML = todayVerses.map(v => `
-            <div class="dash-item" onclick="startFlashcardFromDash(${v.id})">
+        // Lógica de Renderização com Feedback Visual (PRIORIDADE 1)
+        list.innerHTML = todayVerses.map(v => {
+            // Verifica se a interação já foi feita HOJE
+            const isDone = v.lastInteraction === todayStr;
+            
+            // Define classes e ícones condicionalmente
+            const itemClass = isDone ? 'dash-item completed' : 'dash-item';
+            const statusIcon = isDone 
+                ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Feito`
+                : `<small style="color:var(--accent)">▶ Treinar</small>`;
+
+            // Se for feito, remove o estilo inline do small original e usa o do CSS
+            const smallTag = isDone 
+                ? `<small>${statusIcon}</small>` 
+                : `${statusIcon}`;
+
+            return `
+            <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})">
                 <strong>${v.ref}</strong>
-                <small style="color:var(--accent)">▶ Treinar</small>
+                ${smallTag}
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
 }
 
@@ -532,7 +549,8 @@ export function checkStreak() {
         }
     }
     const badge = document.getElementById('streakBadge');
-    if(badge) {
+    // ATUALIZADO: PRIORIDADE 3 (Força atualização visual sempre)
+    if(badge && appData.stats) {
         // SVG do Fogo (Flame)
         const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
         badge.innerHTML = `${flameIcon} ${appData.stats.streak}`;
