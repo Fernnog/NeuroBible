@@ -1143,3 +1143,48 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
 .auth-form-wrapper input { border: 2px solid var(--border); padding: 12px 15px; border-radius: 8px; }
 .auth-form-wrapper input:focus { border-color: var(--accent); }
 .btn-full { width: 100%; border-radius: 8px; justify-content: center; }
+
+/* --- NOVOS ESTILOS v1.2.3: Visualização de Atraso --- */
+
+/* Badge de Atraso (Header) */
+.delay-badge {
+    position: absolute;
+    bottom: -8px;
+    left: -8px;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border: 1px solid var(--danger-text);
+    z-index: 10;
+    cursor: help;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    animation: pulseSlow 3s infinite ease-in-out;
+}
+
+@keyframes pulseSlow {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 4px rgba(231, 76, 60, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+/* Etiqueta de Data no Card de Atrasados */
+.overdue-date-chip {
+    font-size: 0.75rem;
+    background-color: rgba(231, 76, 60, 0.08);
+    color: #c0392b;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    border: 1px dashed #c0392b;
+    font-weight: 600;
+    width: fit-content;
+}
