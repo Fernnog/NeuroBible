@@ -91,7 +91,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER (REFATORADO PARA VISUALIZAÇÃO DE ATRASO) ---
+// --- DASHBOARD RENDER ---
 export function renderDashboard() {
     const dash = document.getElementById('todayDashboard');
     const list = document.getElementById('todayList');
@@ -99,8 +99,8 @@ export function renderDashboard() {
     const overduePanel = document.getElementById('overduePanel');
     const overdueList = document.getElementById('overdueList');
     const overdueCount = document.getElementById('overdueCount');
-
-    // Elementos do novo Badge de Atraso (Header)
+    
+    // Elementos do novo Badge de Atraso
     const delayBadge = document.getElementById('delayBadge');
     const delayCount = document.getElementById('delayCount');
 
@@ -109,34 +109,37 @@ export function renderDashboard() {
     const todayStr = getLocalDateISO(new Date());
     const todayDateObj = new Date(todayStr + 'T00:00:00');
     
-    // 1. Cálculo de Atrasados e Datas Específicas
+    // 1. Lógica de Atrasados com Cálculo de Data
     let maxDelayDays = 0;
 
     const overdueVerses = appData.verses.filter(v => {
-        // Encontra datas estritamente no passado
+        // Encontra datas passadas
         const pastDates = v.dates.filter(d => d < todayStr);
         const hasPastDate = pastDates.length > 0;
-        // Verifica se já interagiu hoje (se sim, não está mais pendente visualmente)
         const interactedToday = v.lastInteraction === todayStr; 
         
         if (hasPastDate && !interactedToday) {
-            // Pega a data perdida mais recente (a "meta" que o usuário furou)
+            // Calcula qual foi a data perdida (pega a mais recente do passado)
             const missedDateStr = pastDates[pastDates.length - 1]; 
             const missedDateObj = new Date(missedDateStr + 'T00:00:00');
             
-            // Calcula diferença em dias
+            // Calcula dias de atraso deste item
             const diffTime = Math.abs(todayDateObj - missedDateObj);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            // Atualiza recorde de atraso
+            // Atualiza o recorde de atraso global
             if (diffDays > maxDelayDays) maxDelayDays = diffDays;
 
-            // Propriedades temporárias para exibição no card
-            v._displayMissedDate = missedDateStr.split('-').reverse().slice(0, 2).join('/');
+            // Anexa propriedade temporária para renderização (não salva no banco)
+            // MODIFICAÇÃO: Formata a data para DD/MM/AAAA e inclui o ano
+            v._displayMissedDate = missedDateStr.split('-').reverse().join('/'); 
             v._displayDelayDays = diffDays;
             
             return true;
         }
+        // Limpa propriedades temporárias se não for atrasado
+        delete v._displayMissedDate;
+        delete v._displayDelayDays;
         return false;
     });
 
@@ -145,30 +148,29 @@ export function renderDashboard() {
         if (maxDelayDays > 0) {
             delayBadge.style.display = 'flex';
             delayCount.innerText = `${maxDelayDays}d`;
-            delayBadge.title = `Atraso acumulado: ${maxDelayDays} dias`;
+            // Dica de tooltip dinâmica com a micro-interação
+            delayBadge.title = `Você tem revisões atrasadas há ${maxDelayDays} dias!`;
         } else {
             delayBadge.style.display = 'none';
+            delayBadge.title = ''; // Limpa o título se não houver atraso
         }
     }
 
-    // Filtra revisão normal de hoje
+    // Filtra revisão de hoje (Mantido igual)
     const todayVerses = appData.verses.filter(v => v.dates.includes(todayStr));
 
     dash.style.display = 'block';
 
-    // 3. Renderiza Painel de Atrasados com Detalhes Visuais
+    // 3. Renderiza Atrasados com a Nova UI
     if (overdueVerses.length > 0 && overduePanel) {
         overduePanel.style.display = 'block';
         if(overdueCount) overdueCount.innerText = overdueVerses.length;
         
-        // Ícones SVG
+        // Ícones SVG (Manter como estão, pois não foram alvo de mudança)
         const overdueIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
         const calendarIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
         if(overdueList) {
-            // Ordena visualmente pelos mais atrasados primeiro
-            overdueVerses.sort((a, b) => b._displayDelayDays - a._displayDelayDays);
-
             overdueList.innerHTML = overdueVerses.map(v => `
                 <div class="dash-item" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid #c0392b; flex-direction: column; align-items: flex-start;">
                     <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
@@ -176,9 +178,9 @@ export function renderDashboard() {
                         <small style="color:#c0392b; font-weight:bold;">-${v._displayDelayDays} dias</small>
                     </div>
                     
-                    <div style="display:flex; align-items:center; gap: 10px; width:100%; margin-top:6px;">
-                        <span class="overdue-date-chip">
-                            ${calendarIcon} Era p/ ${v._displayMissedDate}
+                    <div style="display:flex; align-items:center; gap: 6px; width:100%; margin-top:6px;">
+                        <span class="overdue-date-chip" title="Data original do agendamento">
+                            ${calendarIcon} ${v._displayMissedDate}
                         </span>
                         <div style="display:flex; align-items:center; color:#c0392b; font-size:0.8rem; margin-left:auto;">
                             ${overdueIcon} <span style="font-weight:500;">Recuperar</span>
@@ -191,9 +193,8 @@ export function renderDashboard() {
         overduePanel.style.display = 'none';
     }
 
-    // Renderiza Hoje (Padrão)
+    // Renderiza Hoje (Lógica Mantida)
     countEl.innerText = todayVerses.length;
-    
     if(todayVerses.length === 0) {
         if(overdueVerses.length === 0) {
             list.innerHTML = `<div class="dash-empty-state">Tudo em dia! Nenhuma revisão pendente.</div>`;
@@ -209,8 +210,6 @@ export function renderDashboard() {
         `).join('');
     }
 }
-
-// --- CRUD & FORM LOGIC ---
 
 export function processAndGenerate() {
     const btn = document.getElementById('btnPacing');
@@ -240,7 +239,8 @@ export function processAndGenerate() {
         setPendingVerseData({ ref, text, startDate, dates: reviewDates });
         const modal = document.getElementById('conflictModal');
         const msg = document.getElementById('conflictMsg');
-        msg.innerHTML = `Datas congestionadas: <b>${congestedDates.map(d=>d.split('-').reverse().slice(0,2).join('/')).join(', ')}</b>. Deseja otimizar?`;
+        // Formata datas para DD/MM/AAAA para o conflito
+        msg.innerHTML = `Datas congestionadas: <b>${congestedDates.map(d=>d.split('-').reverse().join('/')).join(', ')}</b>. Deseja otimizar?`;
         modal.style.display = 'flex';
         return;
     }
@@ -488,7 +488,8 @@ export function updatePreviewPanel() {
         container.innerHTML = futureDates.map((dateStr, index) => {
             const d = new Date(dateStr + 'T00:00:00');
             const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short' });
-            const formattedDate = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            // MODIFICAÇÃO: Formata a data para DD/MM/AAAA e inclui o ano
+            const formattedDate = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const load = currentLoadMap[dateStr] || 0;
             const isOverloaded = load >= 5; 
             return `<span class="date-chip ${isOverloaded ? 'is-overloaded' : ''}">Rev ${index+1}: ${dayName} ${formattedDate}</span>`;
@@ -536,7 +537,7 @@ export function checkStreak() {
     }
     const badge = document.getElementById('streakBadge');
     if(badge) {
-        // SVG do Fogo (Flame) para manter visual consistente via JS
+        // Ícone SVG do Fogo (Flame) para manter visual consistente via JS
         const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
         badge.innerHTML = `${flameIcon} ${appData.stats.streak}`;
     }
@@ -547,7 +548,6 @@ export function updatePacingUI() {
     if(!btn) return;
     
     const interval = appData.settings?.planInterval || 1;
-    // Removidos emojis nos labels
     const planConfig = {
         1: { label: "Diário", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
         2: { label: "Alternado", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>' },
@@ -555,7 +555,7 @@ export function updatePacingUI() {
     };
 
     const currentConfig = planConfig[interval] || planConfig[1];
-    const labelEl = document.getElementById('currentPlanLabel');
+    const labelEl = document.getElementById('currentPlanLabel'); // Assumindo que esse ID existe para o label do plano
     if(labelEl) labelEl.innerText = currentConfig.label;
 
     const indicatorEl = document.getElementById('activePlanIcon');
@@ -577,6 +577,7 @@ export function updatePacingUI() {
 
     if (!lastDate) {
         setPacingState(btn, 'ready');
+        btn.title = "Novo versículo liberado!";
         return;
     }
 
