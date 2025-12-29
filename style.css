@@ -778,127 +778,32 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
 }
 
 /* =========================================
-   FUNCIONALIDADES: PACING & STREAK
+   FUNCIONALIDADES: PACING & STREAK (ATUALIZADO)
    ========================================= */
 
-/* === INÍCIO DAS MUDANÇAS PONTUAIS PARA O BOTÃO DE RITMO === */
+/* Novo Wrapper com Flex para o Botão Retangular */
 .pacing-wrapper {
     position: relative;
-    display: inline-flex; /* Mudança para flex para melhor alinhamento */
-    justify-content: center; /* Centraliza o conteúdo do wrapper */
-    align-items: center; /* Alinha verticalmente */
-    min-height: 40px; /* Garante que o wrapper tenha altura suficiente */
+    display: inline-flex; /* Alterado para flex para alinhar corretamente */
+    justify-content: center;
 }
 
-/* Botão de Ritmo (Agora Retangular/Cápsula) */
-#btnPacing {
-    width: 74px; /* Largura aumentada para acomodar dois ícones */
-    height: 40px; /* Mantém altura padrão de botão de ícone */
-    border-radius: 12px; /* Cantos arredondados para estilo cápsula */
-    padding: 0; /* Remove padding interno para controle total via flex/absolute */
-    border: 2px solid var(--border); /* Mantém a borda */
-    background-color: var(--white); /* Background */
+/* Ajuste no Botão Principal para ser Retangular */
+.pacing-btn {
+    position: relative;
+    border: 2px solid var(--border);
     transition: all 0.3s ease;
-    position: relative; /* Necessário para posicionamento absoluto dos badges internos */
-    overflow: hidden; /* Garante que os badges internos não vazem */
-    display: flex; /* Usa flex para centralizar o ícone interno */
-    justify-content: center;
-    align-items: center;
-}
-/* Adicionando hover feedback para o botão principal */
-#btnPacing:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-    color: var(--accent);
-    border-color: var(--accent);
-    background: var(--hover-bg);
+    
+    /* MODIFICAÇÃO PARA FORMATO RETANGULAR */
+    width: 74px; /* Mais largo para caber dois ícones */
+    border-radius: 12px;
+    padding: 0; 
 }
 
-/* Indicador de Plano (Bolha superior) */
-#activePlanIcon {
-    position: absolute;
-    top: -8px; /* Posicionado no topo do botão */
-    left: 50%; /* Centraliza horizontalmente */
-    transform: translateX(-50%); /* Ajuste fino para centralização perfeita */
-    width: 20px; 
-    height: 20px;
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    color: var(--primary);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    z-index: 11; /* Garante que fique acima dos badges inferiores */
-    transition: transform 0.2s;
+.pacing-btn .icon-inner {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
 }
-#activePlanIcon:hover { transform: translateX(-50%) scale(1.1); }
-#activePlanIcon svg { width: 12px; height: 12px; }
-
-/* Badge de Streak (Fogo) */
-.streak-badge {
-    position: absolute; 
-    bottom: -8px; /* Abaixo do botão */
-    right: -4px; /* Alinhado ao canto direito inferior */
-    background: var(--white);
-    color: var(--accent);
-    font-size: 0.65rem; 
-    font-weight: bold;
-    padding: 2px 6px; 
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    border: 1px solid var(--accent); 
-    z-index: 12; /* Acima do botão e do delay badge */
-    cursor: help;
-    pointer-events: none; /* Não interage com cliques */
-    display: flex; 
-    align-items: center; 
-    gap: 4px;
-    transition: transform 0.2s; /* Adiciona transição suave ao hover */
-}
-.streak-badge:hover { /* Efeito suave quando o mouse passa sobre o badge (do botão pai) */
-    transform: scale(1.1);
-}
-.streak-badge svg { width: 10px; height: 10px; stroke-width: 3px; }
-
-/* NOVO: Badge de Atraso (Relógio) */
-.delay-badge {
-    position: absolute; 
-    bottom: -8px; /* Abaixo do botão, alinhado ao streak */
-    left: -4px; /* Alinhado ao canto esquerdo inferior */
-    background: var(--danger-bg); /* Fundo de alerta */
-    color: var(--danger-text); /* Texto de alerta */
-    font-size: 0.65rem; 
-    font-weight: bold;
-    padding: 2px 6px; 
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    border: 1px solid var(--danger-text); 
-    z-index: 12; /* Mesma prioridade do streak */
-    cursor: help;
-    display: flex; 
-    align-items: center; 
-    gap: 4px;
-    animation: pulseSlow 2s infinite ease-in-out; /* Efeito de pulso sutil */
-    transition: transform 0.2s; /* Transição suave para hover */
-}
-/* Hover aplicado ao botão pai para afetar os badges internos de forma unificada */
-#btnPacing:hover .streak-badge,
-#btnPacing:hover .delay-badge {
-    transform: scale(1.1);
-}
-
-.delay-badge svg { width: 10px; height: 10px; stroke-width: 3px; }
-
-/* Efeito de Pulso Sutil para o Badge de Atraso */
-@keyframes pulseSlow {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-/* === FIM DAS MUDANÇAS PONTUAIS PARA O BOTÃO DE RITMO === */
-
 
 .pacing-btn.is-blocked {
     border-color: #e74c3c;
@@ -911,6 +816,90 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
     color: var(--success-text);
     background-color: var(--success-bg);
     box-shadow: 0 0 8px rgba(40, 167, 69, 0.15);
+}
+
+/* Badge de Streak - Posicionado à Direita */
+.streak-badge {
+    position: absolute; 
+    bottom: -8px; 
+    right: -4px; /* Ajustado para o canto direito */
+    background: var(--white);
+    color: var(--accent);
+    font-size: 0.65rem; font-weight: bold;
+    padding: 2px 6px; border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border: 1px solid var(--accent); 
+    z-index: 12;
+    cursor: help;
+    pointer-events: none;
+    display: flex; align-items: center; gap: 4px;
+}
+.streak-badge svg { width: 10px; height: 10px; stroke-width: 3px; }
+
+/* Badge de Atraso (Novo) - Posicionado à Esquerda */
+.delay-badge {
+    position: absolute; 
+    bottom: -8px; 
+    left: -4px; /* Ajustado para o canto esquerdo */
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    font-size: 0.65rem; 
+    font-weight: bold;
+    padding: 2px 6px; 
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border: 1px solid var(--danger-text); 
+    z-index: 12;
+    cursor: help;
+    display: flex; 
+    align-items: center; 
+    gap: 4px;
+    animation: pulseSlow 2s infinite;
+}
+
+@keyframes pulseSlow {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Plan Indicator - Centralizado no Topo */
+.plan-indicator {
+    position: absolute;
+    top: -8px; /* Mais para cima */
+    left: 50%; /* Centralizado horizontalmente */
+    transform: translateX(-50%);
+    width: 20px; height: 20px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 11;
+    transition: transform 0.2s;
+}
+.plan-indicator:hover { transform: translateX(-50%) scale(1.1); }
+.plan-indicator svg { width: 12px; height: 12px; }
+
+/* --- CARD DE DATA DE ATRASO (RESTAURADO) --- */
+.overdue-date-chip {
+    font-size: 0.75rem;
+    background-color: rgba(231, 76, 60, 0.15); /* Vermelho suave */
+    color: #c0392b; /* Texto vermelho escuro */
+    padding: 4px 8px; /* Espaçamento interno */
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px dashed #c0392b; /* Borda tracejada */
+    font-weight: 600;
+    margin-top: 4px;
+    transition: background-color 0.2s;
+}
+.overdue-date-chip:hover {
+    background-color: rgba(231, 76, 60, 0.25);
+    cursor: help;
 }
 
 /* --- SELEÇÃO DE PLANOS (MODAL) --- */
@@ -961,6 +950,8 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
     display: flex; align-items: center; gap: 10px;
     pointer-events: auto;
 }
+.toast svg { width: 18px; height: 18px; flex-shrink: 0; }
+
 .toast.warning { background: #d35400; }
 .toast.success { background: #27ae60; }
 .toast.error { background: #c0392b; }
@@ -995,23 +986,6 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
         width: 100%;
         justify-content: space-between; 
     }
-
-    /* Ajuste para o botão de ritmo em mobile, se necessário */
-    #btnPacing {
-        width: auto; /* Permite que ele se ajuste ao conteúdo */
-        height: auto; /* Altura automática */
-        padding: 8px 12px; /* Padding para ficar mais fácil de tocar */
-        min-height: 40px; /* Garante altura mínima */
-    }
-    /* Oculta badges inferiores em telas muito pequenas se o layout ficar comprometido */
-    .streak-badge, .delay-badge {
-         bottom: -5px; /* Ajuste fino de posicionamento */
-         font-size: 0.6rem; /* Diminui fonte */
-         padding: 1px 4px; /* Diminui padding */
-    }
-     #activePlanIcon {
-         top: -5px; /* Ajuste fino */
-     }
 
     .form-grid {
         grid-template-columns: 1fr; 
