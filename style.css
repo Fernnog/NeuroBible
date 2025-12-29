@@ -197,6 +197,22 @@ header {
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+/* NOVO: Estilo para item concluído (Prioridade 1) */
+.dash-item.completed {
+    border-color: #2ecc71;
+    background-color: #f0fdf4; /* Verde bem claro */
+    box-shadow: 0 2px 8px rgba(46, 204, 113, 0.15);
+}
+.dash-item.completed small {
+    color: #27ae60 !important;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+/* FIM NOVO */
+
+
 .dash-empty-state {
     text-align: center;
     padding: 20px;
@@ -837,7 +853,7 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
 }
 .streak-badge svg { width: 10px; height: 10px; stroke-width: 3px; }
 
-/* Badge de Atraso (Novo) - Posicionado à Esquerda */
+/* NOVO: Badge de Atraso (Prioridade 2) */
 .delay-badge {
     position: absolute; 
     bottom: -8px; 
