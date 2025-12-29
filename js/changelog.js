@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.2.5",
+        date: "2025-12-29",
+        title: "Feedback Visual & Gestão de Atraso",
+        changes: [
+            "✅ <b>Conclusão Visual:</b> Sensação de dever cumprido! Versículos revisados no dia agora ganham destaque verde e ícone de 'check' na lista, confirmando a interação imediatamente.",
+            "🕒 <b>Monitor de Atraso:</b> Novo indicador dedicado (vermelho) no botão de ritmo mostra claramente os dias de atraso acumulados, separado do contador de streak.",
+            "🔥 <b>Sincronia de Interface:</b> Refinamento na atualização dos contadores para garantir que o número de dias consecutivos (fogo) esteja sempre preciso após as revisões."
+        ]
+    },
+    {
         version: "1.2.4",
         date: "2025-12-29",
         title: "Transparência na Nuvem & Atraso",
