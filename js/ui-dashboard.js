@@ -91,7 +91,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER ---
+// --- DASHBOARD RENDER (REFATORADO PARA VISUALIZAÇÃO DE ATRASO) ---
 export function renderDashboard() {
     const dash = document.getElementById('todayDashboard');
     const list = document.getElementById('todayList');
@@ -100,38 +100,88 @@ export function renderDashboard() {
     const overdueList = document.getElementById('overdueList');
     const overdueCount = document.getElementById('overdueCount');
 
+    // Elementos do novo Badge de Atraso (Header)
+    const delayBadge = document.getElementById('delayBadge');
+    const delayCount = document.getElementById('delayCount');
+
     if(!dash || !list) return;
 
     const todayStr = getLocalDateISO(new Date());
+    const todayDateObj = new Date(todayStr + 'T00:00:00');
     
-    // Filtra atrasados
+    // 1. Cálculo de Atrasados e Datas Específicas
+    let maxDelayDays = 0;
+
     const overdueVerses = appData.verses.filter(v => {
-        const hasPastDate = v.dates.some(d => d < todayStr);
+        // Encontra datas estritamente no passado
+        const pastDates = v.dates.filter(d => d < todayStr);
+        const hasPastDate = pastDates.length > 0;
+        // Verifica se já interagiu hoje (se sim, não está mais pendente visualmente)
         const interactedToday = v.lastInteraction === todayStr; 
-        return hasPastDate && !interactedToday;
+        
+        if (hasPastDate && !interactedToday) {
+            // Pega a data perdida mais recente (a "meta" que o usuário furou)
+            const missedDateStr = pastDates[pastDates.length - 1]; 
+            const missedDateObj = new Date(missedDateStr + 'T00:00:00');
+            
+            // Calcula diferença em dias
+            const diffTime = Math.abs(todayDateObj - missedDateObj);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // Atualiza recorde de atraso
+            if (diffDays > maxDelayDays) maxDelayDays = diffDays;
+
+            // Propriedades temporárias para exibição no card
+            v._displayMissedDate = missedDateStr.split('-').reverse().slice(0, 2).join('/');
+            v._displayDelayDays = diffDays;
+            
+            return true;
+        }
+        return false;
     });
 
-    // Filtra revisão de hoje
+    // 2. Atualiza Badge Global de Atraso (Header)
+    if (delayBadge && delayCount) {
+        if (maxDelayDays > 0) {
+            delayBadge.style.display = 'flex';
+            delayCount.innerText = `${maxDelayDays}d`;
+            delayBadge.title = `Atraso acumulado: ${maxDelayDays} dias`;
+        } else {
+            delayBadge.style.display = 'none';
+        }
+    }
+
+    // Filtra revisão normal de hoje
     const todayVerses = appData.verses.filter(v => v.dates.includes(todayStr));
 
     dash.style.display = 'block';
 
-    // Renderiza Atrasados
+    // 3. Renderiza Painel de Atrasados com Detalhes Visuais
     if (overdueVerses.length > 0 && overduePanel) {
         overduePanel.style.display = 'block';
         if(overdueCount) overdueCount.innerText = overdueVerses.length;
         
-        // Ícone SVG de alerta em vermelho
-        const overdueIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px; vertical-align:text-bottom; color:#c0392b;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+        // Ícones SVG
+        const overdueIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+        const calendarIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
         if(overdueList) {
+            // Ordena visualmente pelos mais atrasados primeiro
+            overdueVerses.sort((a, b) => b._displayDelayDays - a._displayDelayDays);
+
             overdueList.innerHTML = overdueVerses.map(v => `
-                <div class="dash-item" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid #c0392b;">
-                    <div style="width:100%">
+                <div class="dash-item" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid #c0392b; flex-direction: column; align-items: flex-start;">
+                    <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                         <strong>${v.ref}</strong>
-                        <div style="display:flex; align-items:center; margin-top:4px; color:#c0392b; font-size:0.85rem;">
-                            ${overdueIcon} 
-                            <span style="font-weight:500;">Recuperar</span>
+                        <small style="color:#c0392b; font-weight:bold;">-${v._displayDelayDays} dias</small>
+                    </div>
+                    
+                    <div style="display:flex; align-items:center; gap: 10px; width:100%; margin-top:6px;">
+                        <span class="overdue-date-chip">
+                            ${calendarIcon} Era p/ ${v._displayMissedDate}
+                        </span>
+                        <div style="display:flex; align-items:center; color:#c0392b; font-size:0.8rem; margin-left:auto;">
+                            ${overdueIcon} <span style="font-weight:500;">Recuperar</span>
                         </div>
                     </div>
                 </div>
@@ -141,7 +191,7 @@ export function renderDashboard() {
         overduePanel.style.display = 'none';
     }
 
-    // Renderiza Hoje
+    // Renderiza Hoje (Padrão)
     countEl.innerText = todayVerses.length;
     
     if(todayVerses.length === 0) {
