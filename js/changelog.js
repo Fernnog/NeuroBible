@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.2.4",
+        date: "2025-12-29",
+        title: "Transparência na Nuvem & Atraso",
+        changes: [
+            "☁️ <b>Feedback de Nuvem Explícito:</b> Fim da 'ansiedade de dados'. Agora o sistema exibe notificações visuais ('Sincronizado!') e logs técnicos detalhados sempre que salva um versículo ou estatística no Firebase.",
+            "🕒 <b>Badge de Atraso (Restaurado):</b> O indicador vermelho de 'dias acumulados' voltou ao botão de ritmo (canto esquerdo), permitindo visualizar sua dívida de revisão num relance.",
+            "🔥 <b>Sincronia de Streak Robusta:</b> O contador de constância agora força o salvamento na nuvem a cada recálculo, garantindo que seu progresso não seja perdido ao trocar de dispositivo."
+        ]
+    },
+    {
         version: "1.2.3",
         date: "2025-12-29",
         title: "Consciência Temporal & UX",
