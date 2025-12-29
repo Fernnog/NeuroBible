@@ -1,4 +1,4 @@
-// js/firebase.js - Conexão Nuvem e Autenticação (v1.2.1 - Persistence Fix)
+// js/firebase.js - Conexão Nuvem e Autenticação (v1.2.1 - Persistence Fix & Feedback Visual)
 
 // 1. CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -176,19 +176,24 @@ window.handleLogout = function() {
 
 // --- 3. INTEGRAÇÃO COM FIRESTORE (Database) ---
 
-// Salvar Versículo (Com Retry/Queue)
+// Salvar Versículo (Com Retry/Queue e Logs Explícitos)
 window.saveVerseToFirestore = function(verse, isRetry = false) {
     if (!currentUser || !db) return; 
+
+    // LOG DE INÍCIO
+    console.log(`[CLOUD] ☁️ Tentando salvar versículo: ${verse.ref} (ID: ${verse.id})...`);
 
     db.collection('users').doc(currentUser.uid).collection('verses').doc(String(verse.id))
         .set(verse)
         .then(() => {
-            console.log("Versículo salvo na nuvem:", verse.ref);
+            // LOG DE SUCESSO
+            console.log(`[CLOUD] ✅ SUCESSO: ${verse.ref} salvo na nuvem.`);
+            
             // Feedback Visual: Apenas se não for retry automático
-            if (!isRetry && window.showToast) window.showToast("Salvo na nuvem", "success");
+            if (!isRetry && window.showToast) window.showToast("☁️ Sincronizado com a nuvem", "success");
         })
         .catch((err) => {
-            console.warn("Falha no save, adicionando à fila:", err);
+            console.error("[CLOUD] ❌ ERRO ao salvar:", err);
             // Se falhar e não for retry, joga pra fila
             if (!isRetry) addToSyncQueue('set', 'verses', verse.id, verse);
         });
@@ -200,22 +205,24 @@ window.saveSettingsToFirestore = function(settings, isRetry = false) {
 
     db.collection('users').doc(currentUser.uid)
         .set({ settings: settings }, { merge: true })
-        .then(() => console.log("Configurações sincronizadas."))
+        .then(() => console.log("[CLOUD] Configurações sincronizadas."))
         .catch((err) => {
-            console.warn("Falha no settings, adicionando à fila:", err);
+            console.warn("[CLOUD] Falha no settings, adicionando à fila:", err);
             if (!isRetry) addToSyncQueue('set', 'settings', null, settings);
         });
 };
 
-// NOVA FUNÇÃO: Salvar Stats/Streak (Com Retry/Queue)
+// NOVA FUNÇÃO: Salvar Stats/Streak (Com Retry/Queue e Logs Explícitos)
 window.saveStatsToFirestore = function(stats, isRetry = false) {
     if (!currentUser || !db) return;
 
+    console.log(`[CLOUD] ☁️ Atualizando estatísticas/streak...`);
+
     db.collection('users').doc(currentUser.uid)
         .set({ stats: stats }, { merge: true })
-        .then(() => console.log("Stats sincronizados."))
+        .then(() => console.log("[CLOUD] ✅ Stats sincronizados."))
         .catch((err) => {
-            console.warn("Falha no stats, adicionando à fila:", err);
+            console.warn("[CLOUD] ❌ Falha no stats, adicionando à fila:", err);
             if (!isRetry) addToSyncQueue('set', 'stats', null, stats);
         });
 };
