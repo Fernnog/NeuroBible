@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.2.3",
+        date: "2025-12-29",
+        title: "Consciência Temporal & UX",
+        changes: [
+            "⏰ <b>Monitor de Atraso:</b> Novo indicador visual (ícone de relógio) no menu superior alerta sobre sua 'dívida temporal' em dias.",
+            "🎨 <b>Redesign do Botão de Ritmo:</b> O botão de perfil agora possui formato retangular (cápsula) para acomodar os indicadores de Streak e Atraso sem poluição visual.",
+            "📅 <b>Data Precisa:</b> Os cards de versículos atrasados agora exibem a data original do agendamento (DD/MM/AAAA), facilitando a priorização da recuperação."
+        ]
+    },
+    {
         version: "1.2.2",
         date: "2025-12-27",
         title: "Voz & Dupla Codificação",
