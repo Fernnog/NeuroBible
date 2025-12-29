@@ -823,6 +823,7 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
     position: absolute; 
     bottom: -8px; 
     right: -4px; /* Ajustado para o canto direito */
+    left: auto; /* Garante que não herde posicionamento incorreto */
     background: var(--white);
     color: var(--accent);
     font-size: 0.65rem; font-weight: bold;
@@ -841,6 +842,7 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
     position: absolute; 
     bottom: -8px; 
     left: -4px; /* Ajustado para o canto esquerdo */
+    right: auto;
     background: var(--danger-bg);
     color: var(--danger-text);
     font-size: 0.65rem; 
