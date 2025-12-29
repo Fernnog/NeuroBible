@@ -2,75 +2,95 @@
 
 > **"A diferença entre ler e reter é a arquitetura do processo."**
 
-O **NeuroBible** transcende a categoria de "agendas de versículos". É uma **Aplicação Progressiva (PWA)** desenhada sob princípios rigorosos de neurociência para transformar dados de curto prazo em sabedoria de longo prazo.
+O **NeuroBible** é uma Aplicação Progressiva (PWA) desenhada sob princípios rigorosos de neurociência para transformar dados de curto prazo em sabedoria de longo prazo.
 
-Diferente de métodos passivos, este sistema atua como um "Personal Trainer Cognitivo". Ele calcula matematicamente o momento exato em que seu cérebro está prestes a esquecer uma informação (Curva do Esquecimento) e intervém com desafios ativos, garantindo a consolidação neural com o mínimo de esforço repetitivo.
+Diferente de métodos passivos, este sistema atua como um "Personal Trainer Cognitivo". Ele calcula matematicamente o momento exato em que seu cérebro está prestes a esquecer uma informação (Curva do Esquecimento) e intervém com desafios ativos, garantindo a consolidação neural.
 
-**Versão Atual:** v1.1.4 — *"Polimento, Identidade & Robustez"*
+**Versão Atual:** v1.2.3 — *"Consciência Temporal & Refinamento Visual"*
 
 ---
 
-## 🧬 Os 4 Pilares da Neuroaprendizagem
+## 🧬 Os 5 Pilares da Neuroaprendizagem
 
-O sistema não se baseia em "decoreba", mas em **Engenharia de Retenção**. A arquitetura do código reflete quatro estágios cognitivos distintos:
+O sistema não se baseia em "decoreba", mas em **Engenharia de Retenção**. A arquitetura do código reflete cinco estágios cognitivos distintos:
 
-### 1. Scaffolding Inverso (O "Andaime" Mental)
-O cérebro aprende melhor quando desafiado progressivamente. O NeuroBible implementa um fluxo de três estágios de dificuldade variável dentro de cada Flashcard:
-*   **Estágio -1 (Visualização Mnemônica):** Antes do texto, o sistema apresenta sua "Micro-Cena" (gancho visual criado por você). O texto bíblico aparece borrado (*blur*), forçando a evocação da imagem mental.
-*   **Estágio 0 (Ancoragem Hard):** O texto é removido, restando apenas as letras iniciais (Acrônimo). O esforço cognitivo aqui é máximo ("Active Recall").
-*   **Estágio 1 (Preenchimento / Cloze):** Se falhar, o usuário solicita uma dica e o sistema exibe o texto com lacunas estratégicas.
+### 1. Consciência Temporal (Novo em v1.2.3)
+Para combater a procrastinação invisível, o sistema agora expõe visualmente a "Dívida Cognitiva":
+*   **Cápsula de Ritmo:** Um controle central retangular no cabeçalho que monitora simultaneamente sua **Constância** (Ícone de Fogo 🔥) e seu **Atraso** (Ícone de Relógio 🕒).
+*   **Feedback de Atraso Real:** O sistema calcula há quantos dias a informação mais antiga deveria ter sido revisada e exibe isso em vermelho, criando um senso de urgência saudável.
+*   **Data de Alvo:** No painel de atrasados, cada item exibe a data original exata (`DD/MM/AAAA`) para a qual estava agendado, contextualizando a falha de recuperação.
 
-### 2. Algoritmo de Repetição Espaçada (SRS)
-Utilizamos uma variação otimizada do algoritmo *SuperMemo*. O ciclo de revisão é projetado para interceptar a memória pouco antes da queda:
-*   **Ciclo de 8 Etapas:** 0 (Plantio), 1, 3, 7, 14, 21, 30, 60 dias.
-*   **Correção de Rota:** Se o usuário sinaliza "Foi Difícil", o algoritmo ignora o calendário e reinicia o ciclo imediatamente (Reset para Dia 0), impedindo a ilusão de fluência.
+### 2. Dual Coding (Codificação Dupla)
+Baseado na teoria de Paivio, o sistema ataca por duas vias sensoriais:
+*   **Via Visual:** Mnemônicas escritas e leitura ativa.
+*   **Via Auditiva (TTS Neural):** O sistema lê os versículos utilizando a síntese de voz nativa do dispositivo, criando uma segunda trilha de memória independente.
 
-### 3. Gestão de Carga & "Burnout Shield"
-Memorização exige energia. O sistema protege o usuário da exaustão mental:
+### 3. Scaffolding Inverso (O "Andaime" Mental)
+O cérebro aprende melhor quando desafiado progressivamente. O fluxo de revisão possui três estágios:
+*   **Estágio -1 (Visualização Mnemônica):** O texto é ocultado/borrado. O usuário deve evocar a imagem mental baseada na "Micro-Cena" cadastrada.
+*   **Estágio 0 (Ancoragem Hard):** Apenas as iniciais (Acrônimo) são exibidas. Esforço cognitivo máximo (*Active Recall*).
+*   **Estágio 1 (Preenchimento / Cloze):** Texto com lacunas estratégicas para refinamento final.
+
+### 4. Algoritmo de Repetição Espaçada (SRS)
+Utilizamos uma variação otimizada do algoritmo *SuperMemo*. O ciclo intercepta a memória pouco antes da queda:
+*   **Ciclo Padrão:** 0, 1, 3, 7, 14, 21, 30, 60 dias.
+*   **Correção de Rota:** Feedback "Difícil" reinicia o ciclo (Reset para Dia 0).
+
+### 5. Gestão de Carga & "Burnout Shield"
 *   **Radar de Carga (63 Dias):** Um mapa de calor permite visualizar "tsunamis" de revisões futuras.
-*   **Válvula de Escape:** Se um dia futuro acumular mais de 5 revisões, o sistema bloqueia novos agendamentos e sugere a redistribuição automática para dias "Leves".
-*   **Feedback de Recuperação (v1.1.4):** Ao recuperar um item atrasado, o sistema fornece reforço positivo imediato, reduzindo a ansiedade associada a listas pendentes.
-
-### 4. Robustez & Identidade (Polimento v1.1.4)
-Um sistema de estudo precisa transmitir paz e confiança:
-*   **Splash Screen:** Uma entrada elegante que oculta o carregamento de dados e prepara o ambiente mental para o estudo.
-*   **Sanity Check:** Um "sistema imunológico" interno que roda a cada inicialização, corrigindo automaticamente dados legados de versões anteriores para evitar erros invisíveis.
+*   **Válvula de Escape:** Bloqueio preventivo de novos cadastros em dias congestionados (> 5 revisões).
 
 ---
 
 ## 🚀 Guia de Uso Rápido
 
 ### Passo 1: Plantio (Input)
-1.  **Mnemônica (Opcional):** Crie uma cena visual absurda para a referência (ex: "Uma baleia engolindo um relógio" para Jonas 1:17).
-2.  **Previsão:** O painel inferior mostra o impacto futuro. Se houver dias vermelhos (sobrecarregados), o sistema sugerirá outra data de início.
+1.  **Mnemônica (Opcional):** Crie uma cena visual absurda para a referência.
+2.  **Previsão:** O painel inferior mostra o impacto futuro no calendário para evitar sobrecarga.
 
-### Passo 2: O Treino (Flashcards)
-Acesse o **Radar** ou o **Dashboard Diário**.
-*   Tente recitar olhando apenas a Mnemônica ou as Iniciais.
-*   Use o botão "Dica" (💡) apenas se travar.
+### Passo 2: Monitoramento (Dashboard)
+Observe a **Cápsula de Ritmo** no topo:
+*   **🔥 (Direita):** Quantos dias seguidos você estudou.
+*   **🕒 (Esquerda):** Quantos dias de atraso acumulado você tem (se houver). Mantenha este número zerado.
+
+### Passo 3: O Treino (Flashcards)
+Acesse o **Dashboard Diário**.
+*   **Áudio:** Use o botão de som para ouvir enquanto lê.
 *   **Julgamento:** Seja honesto. "Difícil" reinicia o ciclo. "Fácil" avança para a próxima etapa.
-
-### Passo 3: Sincronização & Ritmo
-*   O sistema opera **Offline-First** (funciona no modo avião). Assim que houver rede, ele sincroniza silenciosamente com o **Firebase Cloud**.
-*   Defina seu ritmo no menu superior: "Diário" (Elite), "Alternado" (Equilíbrio) ou "Modo Leve".
 
 ---
 
 ## 🛠️ Ficha Técnica & Arquitetura
 
-*   **Core:** Single Page Application (SPA) em Vanilla JS (ES6+).
-*   **Offline Engine:** Service Workers customizados para cache de assets e shell da aplicação.
+*   **Core:** Single Page Application (SPA) em Vanilla JS (ES6 Modules).
+*   **Offline Engine:** Service Workers customizados (PWA Instalável).
 *   **Backend:** Google Firebase (Firestore para DB, Auth para identidade).
-*   **Design System:** CSS3 Moderno (Variables, Flexbox, Keyframes) com suporte nativo a Dark Mode.
-*   **Persistência Híbrida:** LocalStorage (rapidez imediata) + Cloud Firestore (segurança e multi-device).
+*   **Design System:** CSS3 Moderno (Variables, Flexbox, Keyframes) com Dark Mode nativo.
 
-### Estrutura de Arquivos
+### Estrutura de Arquivos (Modular)
 *   `index.html`: Orquestração da UI e Splash Screen.
-*   `app.js`: Cérebro lógico (SRS, Sanity Checks, Manipulação do DOM).
-*   `style.css`: Estilização, animações de feedback e identidade visual.
-*   `firebase.js`: Camada de abstração de dados e autenticação.
-*   `changelog.js`: Registro histórico e controle de versionamento da UI.
-*   `manifest.json` & `service-worker.js`: Configuração PWA instalável.
+*   `style.css`: Estilização, animações e layouts responsivos.
+*   `js/main.js`: Ponto de entrada e orquestração de módulos.
+*   `js/core.js`: Estado global da aplicação (Model).
+*   `js/ui-dashboard.js`: Lógica de renderização do painel, radar e tabelas.
+*   `js/flashcard.js`: Lógica de treino, cartões e áudio (TTS).
+*   `js/srs-engine.js`: Matemática dos agendamentos e datas.
+*   `js/storage.js`: Camada de persistência (LocalStorage).
+*   `js/firebase.js`: Camada de sincronização com a nuvem.
+*   `js/utils.js`: Helpers e formatação.
+
+---
+
+## 📦 Instalação e Desenvolvimento
+
+Devido ao uso de **ES Modules** (`import/export`), esta aplicação precisa ser servida via HTTP, não funciona abrindo o arquivo direto (`file://`).
+
+1.  Clone o repositório.
+2.  Na pasta raiz, rode um servidor local simples:
+    *   Python: `python -m http.server 8000`
+    *   Node/NPM: `npx http-server`
+    *   VSCode: Extensão "Live Server".
+3.  Acesse `http://localhost:8000`.
 
 ---
 
