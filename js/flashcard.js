@@ -300,6 +300,24 @@ export function registerInteraction(verse) {
 
     if (verse.lastInteraction !== todayISO) {
         verse.lastInteraction = todayISO;
+        // Se o usuário estudou, o streak NUNCA pode ser 0.
+        if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO };
+        
+        // Se for zero, forçamos para 1 (O primeiro passo conta!)
+        if (appData.stats.streak === 0) {
+            appData.stats.streak = 1;
+            appData.stats.lastLogin = todayISO;
+            // Atualiza visualmente o badge imediatamente
+            const badge = document.getElementById('streakBadge');
+            if(badge) {
+                // Reaproveitando seu ícone SVG existente
+                const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
+                badge.innerHTML = `${flameIcon} 1`;
+                // Dica Visual: Adiciona classe de cor (opcional, se quiser destacar)
+                badge.style.color = '#e67e22'; // Laranja fogo
+                badge.style.borderColor = '#e67e22';
+            }
+        }        
         saveToStorage();
         if (window.saveVerseToFirestore) window.saveVerseToFirestore(verse);
         
