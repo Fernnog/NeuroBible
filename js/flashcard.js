@@ -253,7 +253,6 @@ function updateHintButtonUI() {
 }
 
 // Alterna apenas a visualização entre Mnemônica e Explicação (Sem avançar estágio)
-// CORREÇÃO v1.1.8: Agora salva interação ao visualizar contexto
 export function toggleExplanation() {
     const newVal = !isExplanationActive.value;
     setIsExplanationActive(newVal);
@@ -294,33 +293,61 @@ export function startFlashcardFromDash(id) {
     startFlashcard(id);
 }
 
+// --- FUNÇÃO ATUALIZADA COM A CORREÇÃO DE STREAK E LOGS DE DEBUG ---
 export function registerInteraction(verse) {
     const todayISO = getLocalDateISO(new Date());
+    
+    // Verifica se estava atrasado antes de marcar como hoje
     const wasOverdue = verse.dates.some(d => d < todayISO) && verse.lastInteraction !== todayISO;
 
+    // Só processa se for uma nova interação hoje
     if (verse.lastInteraction !== todayISO) {
         verse.lastInteraction = todayISO;
-        // Se o usuário estudou, o streak NUNCA pode ser 0.
-        if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO };
         
-        // Se for zero, forçamos para 1 (O primeiro passo conta!)
-        if (appData.stats.streak === 0) {
+        console.log("--- DEBUG STREAK INÍCIO ---");
+        console.log("Stats antes:", JSON.stringify(appData.stats));
+
+        // 1. Garantia de Estrutura de Stats
+        if (!appData.stats) {
+            appData.stats = { streak: 0, lastLogin: todayISO };
+        }
+
+        // 2. Lógica de Ignição (Correção do Zero)
+        // Se o streak é inválido, nulo, undefined OU zero, forçamos para 1
+        if (!appData.stats.streak || appData.stats.streak <= 0) {
+            console.log("Streak estava zerado ou inválido. Forçando ignição para 1.");
             appData.stats.streak = 1;
             appData.stats.lastLogin = todayISO;
-            // Atualiza visualmente o badge imediatamente
+            
+            // 3. Atualização Visual Forçada (DOM Direto)
+            // Isso garante que o ícone mude sem depender de recarregar a página
             const badge = document.getElementById('streakBadge');
             if(badge) {
-                // Reaproveitando seu ícone SVG existente
                 const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
                 badge.innerHTML = `${flameIcon} 1`;
-                // Dica Visual: Adiciona classe de cor (opcional, se quiser destacar)
-                badge.style.color = '#e67e22'; // Laranja fogo
-                badge.style.borderColor = '#e67e22';
             }
-        }        
+        } else {
+            // Se já tem streak (>0), apenas atualizamos o lastLogin para hoje
+            appData.stats.lastLogin = todayISO;
+        }
+
+        console.log("Stats depois:", JSON.stringify(appData.stats));
+
+        // 4. Salvar Persistência Local
         saveToStorage();
+        
+        // 5. Salvar na Nuvem (Versículo)
         if (window.saveVerseToFirestore) window.saveVerseToFirestore(verse);
         
+        // 6. Salvar na Nuvem (Stats/Streak) - CRÍTICO
+        if (window.saveStatsToFirestore) {
+            console.log("Disparando salvamento de Stats...");
+            window.saveStatsToFirestore(appData.stats);
+        } else {
+            console.warn("Função saveStatsToFirestore não encontrada!");
+        }
+        
+        // Atualiza Dashboard (Isso aciona o Check Verde visual via ui-dashboard.js)
         renderDashboard(); 
 
         if (wasOverdue) {
