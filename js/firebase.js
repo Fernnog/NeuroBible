@@ -1,4 +1,4 @@
-// js/firebase.js - Conexão Nuvem e Autenticação (v1.2.1 - Persistence Fix & Feedback Visual)
+// js/firebase.js - Conexão Nuvem e Autenticação (v1.2.6 - Sanitização & Robustez)
 
 // 1. CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
@@ -55,7 +55,6 @@ window.processSyncQueue = function() {
             } else if (item.collection === 'settings') {
                 window.saveSettingsToFirestore(item.data, true);
             } else if (item.collection === 'stats') {
-                // NOVA LÓGICA: Reprocessa stats pendentes
                 window.saveStatsToFirestore(item.data, true);
             }
         } else if (item.action === 'delete') {
@@ -176,26 +175,36 @@ window.handleLogout = function() {
 
 // --- 3. INTEGRAÇÃO COM FIRESTORE (Database) ---
 
-// Salvar Versículo (Com Retry/Queue e Logs Explícitos)
+// Salvar Versículo (Com Sanitização, Retry/Queue e Logs Explícitos)
 window.saveVerseToFirestore = function(verse, isRetry = false) {
     if (!currentUser || !db) return; 
 
-    // LOG DE INÍCIO
-    console.log(`[CLOUD] ☁️ Tentando salvar versículo: ${verse.ref} (ID: ${verse.id})...`);
+    // 1. SANITIZAÇÃO: Cria uma cópia limpa para não enviar lixo de UI (_display...)
+    // Isso evita que o Firestore rejeite o documento ou salve dados corrompidos
+    const cleanVerse = { ...verse };
+    Object.keys(cleanVerse).forEach(key => {
+        // Remove chaves privadas de UI (iniciadas com _) ou valores undefined
+        if (key.startsWith('_') || cleanVerse[key] === undefined) {
+            delete cleanVerse[key];
+        }
+    });
 
-    db.collection('users').doc(currentUser.uid).collection('verses').doc(String(verse.id))
-        .set(verse)
+    // LOG DE INÍCIO
+    console.log(`[CLOUD] ☁️ Tentando salvar versículo (Sanitizado): ${cleanVerse.ref} (ID: ${cleanVerse.id})...`);
+
+    db.collection('users').doc(currentUser.uid).collection('verses').doc(String(cleanVerse.id))
+        .set(cleanVerse)
         .then(() => {
             // LOG DE SUCESSO
-            console.log(`[CLOUD] ✅ SUCESSO: ${verse.ref} salvo na nuvem.`);
+            console.log(`[CLOUD] ✅ SUCESSO: ${cleanVerse.ref} salvo na nuvem.`);
             
             // Feedback Visual: Apenas se não for retry automático
             if (!isRetry && window.showToast) window.showToast("☁️ Sincronizado com a nuvem", "success");
         })
         .catch((err) => {
             console.error("[CLOUD] ❌ ERRO ao salvar:", err);
-            // Se falhar e não for retry, joga pra fila
-            if (!isRetry) addToSyncQueue('set', 'verses', verse.id, verse);
+            // Se falhar e não for retry, joga pra fila usando o objeto limpo
+            if (!isRetry) addToSyncQueue('set', 'verses', cleanVerse.id, cleanVerse);
         });
 };
 
@@ -212,7 +221,7 @@ window.saveSettingsToFirestore = function(settings, isRetry = false) {
         });
 };
 
-// NOVA FUNÇÃO: Salvar Stats/Streak (Com Retry/Queue e Logs Explícitos)
+// Salvar Stats/Streak (Com Retry/Queue e Logs Explícitos)
 window.saveStatsToFirestore = function(stats, isRetry = false) {
     if (!currentUser || !db) return;
 
