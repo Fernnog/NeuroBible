@@ -1,282 +1,436 @@
-// js/firebase.js - Conexão Nuvem e Autenticação (v1.2.6 - Sanitização & Robustez)
+// js/flashcard.js
+import { 
+    appData, currentReviewId, setCurrentReviewId, 
+    cardStage, setCardStage, 
+    isExplanationActive, setIsExplanationActive 
+} from './core.js';
+import { saveToStorage } from './storage.js';
+import { getAcronym, generateClozeText, getLocalDateISO, showToast } from './utils.js';
+import { renderDashboard, updateRadar } from './ui-dashboard.js';
+import { calculateSRSDates, findNextLightDay } from './srs-engine.js';
 
-// 1. CONFIGURAÇÃO DO FIREBASE
-const firebaseConfig = {
-    apiKey: "AIzaSyBcwdrOVkKdM9wCNXIH-G-wM7D07vpBJIQ",
-    authDomain: "neurobible-5b44f.firebaseapp.com",
-    projectId: "neurobible-5b44f",
-    storageBucket: "neurobible-5b44f.firebasestorage.app",
-    messagingSenderId: "1050657162706",
-    appId: "1:1050657162706:web:03d8101b6b6e15d92bf40b",
-    measurementId: "G-P92Z7DFW7N"
-};
+// --- GESTÃO DE ÁUDIO v1.2.2 ---
+let currentUtterance = null; 
 
-// Inicialização segura
-let db, auth;
-let currentUser = null;
-
-try {
-    if (firebase.apps.length === 0) {
-        firebase.initializeApp(firebaseConfig);
+export function stopAudio() {
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
     }
-    db = firebase.firestore();
-    auth = firebase.auth();
-    console.log("Firebase inicializado com sucesso.");
-} catch (error) {
-    console.error("Erro ao inicializar Firebase. Verifique suas chaves de API.", error);
+    resetAudioUI();
 }
 
-// --- GESTÃO DE FILA OFFLINE (SYNC QUEUE) ---
+function resetAudioUI() {
+    const btn = document.getElementById('btnAudioToggle');
+    const iconSpeaker = document.getElementById('iconSpeaker');
+    const iconStop = document.getElementById('iconStop');
+    const label = document.getElementById('labelAudio');
 
-// Adiciona item à fila local quando falha a rede
-function addToSyncQueue(action, collection, docId, data) {
-    const queue = JSON.parse(localStorage.getItem('neuroBibleSyncQueue') || '[]');
-    // Adiciona nova pendência com timestamp
-    queue.push({ action, collection, docId, data, timestamp: Date.now() });
-    localStorage.setItem('neuroBibleSyncQueue', JSON.stringify(queue));
-    
-    if (window.showToast) window.showToast("Sem rede. Salvo localmente para sync posterior.", "warning");
+    if (btn) {
+        btn.classList.remove('is-playing');
+        if(iconSpeaker) iconSpeaker.style.display = 'block';
+        if(iconStop) iconStop.style.display = 'none';
+        if(label) label.innerText = "Ouvir Versículo";
+    }
 }
 
-// Processa a fila (chamado quando volta online ou ao iniciar)
-window.processSyncQueue = function() {
-    const queue = JSON.parse(localStorage.getItem('neuroBibleSyncQueue') || '[]');
-    if (queue.length === 0) return;
+export function toggleAudio() {
+    // Se já estiver falando, para imediatamente
+    if (window.speechSynthesis.speaking) {
+        stopAudio();
+        return;
+    }
 
-    console.log(`[Sync] Processando ${queue.length} itens pendentes...`);
+    const textElement = document.getElementById('cardFullText');
+    if (!textElement) return;
     
-    // Limpa a fila do storage para evitar loops, processa a cópia em memória
-    localStorage.setItem('neuroBibleSyncQueue', '[]');
+    // Limpeza básica: remove espaços excessivos
+    const textToRead = textElement.innerText.trim();
+    if (!textToRead) return;
 
-    queue.forEach(item => {
-        if (item.action === 'set') {
-            if (item.collection === 'verses') {
-                window.saveVerseToFirestore(item.data, true); // true = isRetry (sem toast)
-            } else if (item.collection === 'settings') {
-                window.saveSettingsToFirestore(item.data, true);
-            } else if (item.collection === 'stats') {
-                window.saveStatsToFirestore(item.data, true);
-            }
-        } else if (item.action === 'delete') {
-            window.handleCloudDeletion(item.docId, true);
+    // Configuração da Fala
+    currentUtterance = new SpeechSynthesisUtterance(textToRead);
+    currentUtterance.lang = 'pt-BR'; // Detecta voz PT-BR do sistema
+    currentUtterance.rate = 0.9;     // Levemente mais lento para memorização
+    currentUtterance.pitch = 1.0;
+
+    // Eventos de Ciclo de Vida
+    currentUtterance.onstart = () => {
+        const btn = document.getElementById('btnAudioToggle');
+        const iconSpeaker = document.getElementById('iconSpeaker');
+        const iconStop = document.getElementById('iconStop');
+        const label = document.getElementById('labelAudio');
+        
+        if(btn) {
+            btn.classList.add('is-playing');
+            iconSpeaker.style.display = 'none';
+            iconStop.style.display = 'block';
+            label.innerText = "Parar Leitura";
         }
-    });
+    };
+
+    currentUtterance.onend = () => {
+        resetAudioUI();
+    };
+
+    currentUtterance.onerror = (e) => {
+        console.warn("Erro TTS:", e);
+        resetAudioUI();
+    };
+
+    window.speechSynthesis.speak(currentUtterance);
+}
+
+// --- ÍCONES SVG ---
+const ICONS = {
+    target: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+    bulb: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21h6"/><path d="M9 21v-4h6v4"/><path d="M12 3a9 9 0 0 0-9 9c0 4.97 9 13 9 13s9-8.03 9-13a9 9 0 0 0-9-9z"/></svg>`,
+    next: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>`,
+    back: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>`
 };
 
-// Listeners de Rede (Feedback Visual & Gatilhos)
-window.addEventListener('online', () => {
-    if (window.showToast) window.showToast("Conexão restaurada. Sincronizando...", "success");
+// --- FLASHCARD LOGIC ---
+
+export function openDailyReview(dateStr) {
+    let versesToReview = appData.verses.filter(v => v.dates.includes(dateStr));
     
-    // Atualiza indicador visual para Verde se estiver logado
-    const dot = document.getElementById('authStatusDot');
-    if(dot && currentUser) dot.style.backgroundColor = "#2ecc71"; 
+    if (versesToReview.length === 0) return;
 
-    window.processSyncQueue();
+    // Embaralha (Interleaving)
+    versesToReview = versesToReview.sort(() => Math.random() - 0.5);
+
+    const modal = document.getElementById('reviewModal');
+    const listContainer = document.getElementById('reviewList');
+    const title = document.getElementById('reviewTitle');
     
-    // Tenta puxar dados atualizados ao reconectar
-    if(window.loadVersesFromFirestore && window.handleCloudData) {
-        window.loadVersesFromFirestore(window.handleCloudData);
-    }
-});
-
-window.addEventListener('offline', () => {
-    if (window.showToast) window.showToast("Você está offline. Alterações salvas localmente.", "warning");
+    document.getElementById('reviewListContainer').style.display = 'block';
+    document.getElementById('flashcardContainer').style.display = 'none';
+    document.getElementById('flashcardInner').classList.remove('is-flipped');
     
-    // Atualiza indicador visual para Vermelho
-    const dot = document.getElementById('authStatusDot');
-    if(dot) dot.style.backgroundColor = "#e74c3c"; 
-});
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    title.innerText = `Revisão: ${dateObj.toLocaleDateString('pt-BR')}`;
 
+    listContainer.innerHTML = versesToReview.map(v => `
+        <div class="verse-item" onclick="startFlashcard(${v.id})">
+            <strong>${v.ref}</strong>
+            <span>▶ Treinar</span>
+        </div>
+    `).join('');
 
-// --- 2. GESTÃO DE AUTENTICAÇÃO (Auth) ---
+    modal.style.display = 'flex';
+}
 
-if (auth) {
-    auth.onAuthStateChanged((user) => {
-        const loginState = document.getElementById('loginState');
-        const userState = document.getElementById('userState');
-        const userEmailDisplay = document.getElementById('userEmailDisplay');
-        const dot = document.getElementById('authStatusDot');
+export function startFlashcard(verseId) {
+    setCurrentReviewId(verseId);
+    const verse = appData.verses.find(v => v.id === verseId);
+    if (!verse) return;
 
-        if (user) {
-            // --- USUÁRIO LOGADO ---
-            currentUser = user;
-            console.log("Usuário conectado:", user.email);
-            
-            if(loginState) loginState.style.display = 'none';
-            if(userState) userState.style.display = 'block';
-            if(userEmailDisplay) userEmailDisplay.innerText = user.email;
-            
-            // Indicador visual no header (Verde se online)
-            if (dot) dot.style.backgroundColor = navigator.onLine ? "#2ecc71" : "#e74c3c";
+    document.getElementById('reviewListContainer').style.display = 'none';
+    document.getElementById('flashcardContainer').style.display = 'block';
+    document.getElementById('flashcardInner').classList.remove('is-flipped');
+    
+    document.getElementById('cardRef').innerText = verse.ref; 
+    document.getElementById('cardRefBack').innerText = verse.ref; 
+    document.getElementById('cardFullText').innerText = verse.text;
+    
+    // Reset de Estado
+    const hasMnemonic = verse.mnemonic && verse.mnemonic.trim().length > 0;
+    setCardStage(hasMnemonic ? -1 : 0); // Se tem mnemônica começa no -1, senão no 0
+    setIsExplanationActive(false); 
+    
+    renderCardContent(verse);
+    updateHintButtonUI(); 
+    resetAudioUI(); // Garante UI limpa ao abrir novo card
+}
 
-            // CRÍTICO: Carrega dados e passa para a PONTE no main.js
-            if (window.loadVersesFromFirestore) {
-                window.loadVersesFromFirestore((data) => {
-                   if(window.handleCloudData && data) {
-                       window.handleCloudData(data);
-                   } else {
-                       console.log('Dados baixados, mas UI ainda não pronta.');
-                   }
-                });
-            }
-            
-            // Tenta processar fila pendente ao logar
-            if (window.processSyncQueue) window.processSyncQueue();
+// Lógica de Renderização com Animação
+function renderCardContent(verse) {
+    const contentEl = document.getElementById('cardTextContent');
+    const mnemonicBox = document.getElementById('mnemonicContainer');
+    const refEl = document.getElementById('cardRef');
+    const explContainer = document.getElementById('explanationContainer');
+    const explText = document.getElementById('cardExplanationText');
+    const mnemonicText = document.getElementById('cardMnemonicText');
 
+    // Reset visual básico
+    contentEl.classList.remove('blur-text');
+    mnemonicBox.style.display = 'none';
+    explContainer.style.display = 'none';
+    contentEl.style.display = 'block';
+
+    if (cardStage.value === -1) {
+        // --- ESTÁGIO -1: MNEMÔNICA ---
+        refEl.style.display = 'none';
+        
+        if (isExplanationActive.value) {
+            // MOSTRA A EXPLICAÇÃO
+            explContainer.style.display = 'flex';
+            explText.innerText = verse.explanation || "Sem explicação cadastrada.";
+            mnemonicBox.style.display = 'none'; 
         } else {
-            // --- USUÁRIO DESLOGADO ---
-            currentUser = null;
-            console.log("Usuário desconectado.");
-            
-            if(loginState) loginState.style.display = 'block';
-            if(userState) userState.style.display = 'none';
-            
-            if (dot) dot.style.backgroundColor = "#ccc"; // Cinza
+            // MOSTRA A MNEMÔNICA
+            mnemonicBox.style.display = 'flex';
+            explContainer.style.display = 'none';
+            mnemonicText.innerText = verse.mnemonic;
         }
-    });
+
+        // Texto borrado (Scaffolding)
+        contentEl.innerText = getAcronym(verse.text);
+        contentEl.className = 'cloze-text first-letter-mode blur-text'; 
+    } 
+    else if (cardStage.value === 0) {
+        // --- ESTÁGIO 0: ACRÔNIMO (Iniciais) ---
+        refEl.style.display = 'block';
+        contentEl.innerText = getAcronym(verse.text);
+        contentEl.className = 'cloze-text first-letter-mode'; // Remove blur
+    } 
+    else if (cardStage.value === 1) {
+        // --- ESTÁGIO 1: CLOZE (Lacunas) ---
+        refEl.style.display = 'block';
+        const clozeHTML = generateClozeText(verse.text).replace(/\n/g, '<br>');
+        contentEl.innerHTML = `"${clozeHTML}"`;
+        contentEl.className = 'cloze-text';
+    }
 }
 
-window.openAuthModal = function() {
-    document.getElementById('authModal').style.display = 'flex';
-};
-
-window.closeAuthModal = function() {
-    document.getElementById('authModal').style.display = 'none';
-};
-
-window.handleLogin = function() {
-    const email = document.getElementById('authEmail').value;
-    const pass = document.getElementById('authPassword').value;
-
-    if (!email || !pass) return showToast("Preencha e-mail e senha.", "error");
-
-    auth.signInWithEmailAndPassword(email, pass)
-        .then((userCredential) => {
-            window.showToast("Login realizado!", "success");
-            window.closeAuthModal();
-        })
-        .catch((error) => {
-            console.error(error);
-            let msg = error.message;
-            if (error.code === 'auth/wrong-password') msg = "Senha incorreta.";
-            if (error.code === 'auth/user-not-found') msg = "E-mail não cadastrado.";
-            window.showToast("Erro: " + msg, "error");
-        });
-};
-
-window.handleLogout = function() {
-    auth.signOut().then(() => {
-        window.showToast("Você saiu da conta.", "warning");
-        // Opcional: Limpar dados locais ao sair
-        // window.clearData(); 
-    });
-};
-
-
-// --- 3. INTEGRAÇÃO COM FIRESTORE (Database) ---
-
-// Salvar Versículo (Com Sanitização, Retry/Queue e Logs Explícitos)
-window.saveVerseToFirestore = function(verse, isRetry = false) {
-    if (!currentUser || !db) return; 
-
-    // 1. SANITIZAÇÃO: Cria uma cópia limpa para não enviar lixo de UI (_display...)
-    // Isso evita que o Firestore rejeite o documento ou salve dados corrompidos
-    const cleanVerse = { ...verse };
-    Object.keys(cleanVerse).forEach(key => {
-        // Remove chaves privadas de UI (iniciadas com _) ou valores undefined
-        if (key.startsWith('_') || cleanVerse[key] === undefined) {
-            delete cleanVerse[key];
-        }
-    });
-
-    // LOG DE INÍCIO
-    console.log(`[CLOUD] ☁️ Tentando salvar versículo (Sanitizado): ${cleanVerse.ref} (ID: ${cleanVerse.id})...`);
-
-    db.collection('users').doc(currentUser.uid).collection('verses').doc(String(cleanVerse.id))
-        .set(cleanVerse)
-        .then(() => {
-            // LOG DE SUCESSO
-            console.log(`[CLOUD] ✅ SUCESSO: ${cleanVerse.ref} salvo na nuvem.`);
-            
-            // Feedback Visual: Apenas se não for retry automático
-            if (!isRetry && window.showToast) window.showToast("☁️ Sincronizado com a nuvem", "success");
-        })
-        .catch((err) => {
-            console.error("[CLOUD] ❌ ERRO ao salvar:", err);
-            // Se falhar e não for retry, joga pra fila usando o objeto limpo
-            if (!isRetry) addToSyncQueue('set', 'verses', cleanVerse.id, cleanVerse);
-        });
-};
-
-// Salvar Configurações (Com Retry/Queue)
-window.saveSettingsToFirestore = function(settings, isRetry = false) {
-    if (!currentUser || !db) return;
-
-    db.collection('users').doc(currentUser.uid)
-        .set({ settings: settings }, { merge: true })
-        .then(() => console.log("[CLOUD] Configurações sincronizadas."))
-        .catch((err) => {
-            console.warn("[CLOUD] Falha no settings, adicionando à fila:", err);
-            if (!isRetry) addToSyncQueue('set', 'settings', null, settings);
-        });
-};
-
-// Salvar Stats/Streak (Com Retry/Queue e Logs Explícitos)
-window.saveStatsToFirestore = function(stats, isRetry = false) {
-    if (!currentUser || !db) return;
-
-    console.log(`[CLOUD] ☁️ Atualizando estatísticas/streak...`);
-
-    db.collection('users').doc(currentUser.uid)
-        .set({ stats: stats }, { merge: true })
-        .then(() => console.log("[CLOUD] ✅ Stats sincronizados."))
-        .catch((err) => {
-            console.warn("[CLOUD] ❌ Falha no stats, adicionando à fila:", err);
-            if (!isRetry) addToSyncQueue('set', 'stats', null, stats);
-        });
-};
-
-// Carregar Dados (Versículos + Configurações + Stats)
-window.loadVersesFromFirestore = function(callback) {
-    if (!currentUser || !db) return;
-
-    // 1. Busca Dados do Usuário (Settings + Stats)
-    const userDocPromise = db.collection('users').doc(currentUser.uid).get();
+// Nova Lógica de Botões Dinâmicos (Bifurcação)
+function updateHintButtonUI() {
+    const controlsArea = document.getElementById('hintControlsArea');
+    const tapIcon = document.getElementById('tapHintIcon'); // Controle de visibilidade do flip
     
-    // 2. Busca Versículos (Subcoleção)
-    const versesCollectionPromise = db.collection('users').doc(currentUser.uid).collection('verses').get();
+    controlsArea.innerHTML = ''; // Limpa botões anteriores
+    
+    const verse = appData.verses.find(v => v.id === currentReviewId.value);
+    if (!verse) return;
 
-    Promise.all([userDocPromise, versesCollectionPromise])
-        .then(([userDoc, versesSnapshot]) => {
-            const userData = userDoc.exists ? userDoc.data() : {};
+    // --- FASE 1: MNEMÔNICA (-1) ---
+    if (cardStage.value === -1) {
+        // Bloqueia visualização da resposta completa nesta fase
+        if(tapIcon) tapIcon.style.display = 'none';
+
+        // Botão A: Contexto (Apenas se houver explicação)
+        if (verse.explanation && verse.explanation.trim().length > 0) {
+            const btnExpl = document.createElement('button');
+            btnExpl.className = 'btn-ghost-accent';
             
-            const cloudVerses = [];
-            versesSnapshot.forEach((doc) => {
-                cloudVerses.push(doc.data());
-            });
+            // Alterna texto do botão dependendo do estado
+            if (isExplanationActive.value) {
+                btnExpl.innerHTML = `${ICONS.back} Voltar para Cena Mnemônica`;
+            } else {
+                btnExpl.innerHTML = `${ICONS.bulb} Esqueci a cena (Ver Contexto)`;
+            }
+            
+            btnExpl.onclick = (e) => { e.stopPropagation(); toggleExplanation(); };
+            controlsArea.appendChild(btnExpl);
+        }
 
-            // Retorna um objeto completo para o main.js processar
-            callback({
-                verses: cloudVerses,
-                settings: userData.settings || null,
-                stats: userData.stats || null
-            });
-        })
-        .catch((error) => console.error("Erro ao baixar dados completos:", error));
-};
+        // Botão B: Avançar para Treino
+        const btnNext = document.createElement('button');
+        btnNext.className = 'btn-hint';
+        // Texto muda se o usuário estiver vendo a explicação
+        btnNext.innerHTML = isExplanationActive.value 
+            ? `${ICONS.next} <span>Entendi! Ir para Iniciais</span>`
+            : `${ICONS.next} <span>Lembrei! Ir para Iniciais</span>`;
+            
+        btnNext.onclick = (e) => { e.stopPropagation(); advanceStage(); };
+        controlsArea.appendChild(btnNext);
+    } 
+    // --- FASE 2: INICIAIS (0) ---
+    else if (cardStage.value === 0) {
+        // Libera ícone de virar (flip)
+        if(tapIcon) tapIcon.style.display = 'flex';
 
-// Deletar da Nuvem (Com Retry/Queue)
-window.handleCloudDeletion = function(id, isRetry = false) {
-    if (!currentUser || !db) return;
+        const btnHint = document.createElement('button');
+        btnHint.className = 'btn-hint';
+        btnHint.innerHTML = `${ICONS.bulb} <span>Preciso de uma Dica (Lacunas)</span>`;
+        btnHint.onclick = (e) => { e.stopPropagation(); advanceStage(); };
+        controlsArea.appendChild(btnHint);
+    } 
+    // --- FASE 3: LACUNAS (1) ---
+    else {
+        // Apenas ícone de virar disponível
+        if(tapIcon) tapIcon.style.display = 'flex';
+    }
+}
 
-    db.collection('users').doc(currentUser.uid).collection('verses').doc(String(id))
-        .delete()
-        .then(() => {
-            console.log("Item deletado da nuvem.");
-            if (!isRetry && window.showToast) window.showToast("Removido da nuvem", "success");
-        })
-        .catch((error) => {
-            console.error("Erro ao deletar na nuvem:", error);
-            if (!isRetry) addToSyncQueue('delete', 'verses', id, null);
-        });
-};
+// Alterna apenas a visualização entre Mnemônica e Explicação (Sem avançar estágio)
+export function toggleExplanation() {
+    const newVal = !isExplanationActive.value;
+    setIsExplanationActive(newVal);
+    
+    const verse = appData.verses.find(v => v.id === currentReviewId.value);
+    
+    // REGISTRA A INTERAÇÃO
+    if (verse) {
+        registerInteraction(verse);
+    }
+    
+    renderCardContent(verse);
+    updateHintButtonUI();
+}
+
+// Avança na hierarquia cognitiva (Mnemônica -> Iniciais -> Lacunas)
+export function advanceStage() {
+    const current = cardStage.value;
+    
+    if (current === -1) {
+        setCardStage(0); // Vai para Iniciais
+        setIsExplanationActive(false); // Reseta visualização de explicação
+    } else if (current === 0) {
+        setCardStage(1); // Vai para Lacunas
+    }
+    
+    const verse = appData.verses.find(v => v.id === currentReviewId.value);
+    
+    // Registra interação técnica (usuário está ativo)
+    registerInteraction(verse);
+    
+    renderCardContent(verse);
+    updateHintButtonUI();
+}
+
+export function startFlashcardFromDash(id) {
+    document.getElementById('reviewModal').style.display = 'flex';
+    startFlashcard(id);
+}
+
+// --- FUNÇÃO CORRIGIDA: SUPORTE A AUTOSAVE OPCIONAL ---
+// Adicionado parâmetro autoSave=true por padrão
+export function registerInteraction(verse, autoSave = true) {
+    const todayISO = getLocalDateISO(new Date());
+    
+    // Verifica se estava atrasado
+    const wasOverdue = verse.dates.some(d => d < todayISO) && verse.lastInteraction !== todayISO;
+
+    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO (Só se necessário) ---
+    if (verse.lastInteraction !== todayISO) {
+        verse.lastInteraction = todayISO;
+        
+        // CONDICIONAL: Só salva se autoSave for true.
+        // Se false, o chamador (ex: handleDifficulty) salvará depois.
+        if (autoSave && window.saveVerseToFirestore) {
+            window.saveVerseToFirestore(verse);
+        }
+        
+        // Feedback de recuperação
+        if (wasOverdue) {
+            showToast("🚀 Progresso registrado! Item recuperado.", "success");
+        }
+    }
+
+    // --- BLOCO 2: ATUALIZAÇÃO DO STREAK (Sempre Executa na Interação) ---
+    
+    console.log("--- DEBUG STREAK --- Checking...");
+
+    if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO };
+    
+    let statsChanged = false;
+
+    // Cenário A: Streak Zerado/Inválido -> Força Ignição (1)
+    if (!appData.stats.streak || appData.stats.streak <= 0) {
+        console.log("🔥 FIX: Streak estava 0 ou nulo. Forçando 1.");
+        appData.stats.streak = 1;
+        appData.stats.lastLogin = todayISO;
+        statsChanged = true;
+        
+        // Atualização Visual Forçada Imediata
+        const badge = document.getElementById('streakBadge');
+        if(badge) {
+            const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
+            badge.innerHTML = `${flameIcon} 1`;
+        }
+    } 
+    // Cenário B: Já tem Streak, só garante lastLogin hoje
+    else if (appData.stats.lastLogin !== todayISO) {
+        console.log("🔥 FIX: Atualizando lastLogin para hoje.");
+        appData.stats.lastLogin = todayISO;
+        statsChanged = true;
+    }
+
+    // Persistência Global
+    saveToStorage();
+    
+    if (statsChanged) {
+        if (window.saveStatsToFirestore) {
+            console.log("Disparando salvamento de Stats...");
+            window.saveStatsToFirestore(appData.stats);
+        }
+    }
+    
+    // Renderiza Dashboard (Atualiza checks verdes)
+    renderDashboard(); 
+}
+
+export function handleDifficulty(level) {
+    // CRÍTICO: Para o áudio antes de processar saída
+    stopAudio();
+
+    const verseIndex = appData.verses.findIndex(v => v.id === currentReviewId.value);
+    if (verseIndex === -1) return;
+    const verse = appData.verses[verseIndex];
+
+    // PASSO 1: Registra interação na memória mas NÃO SALVA NO BANCO AINDA (false)
+    // Isso atualiza lastInteraction e streak na memória local
+    registerInteraction(verse, false);
+
+    // PASSO 2: Aplica lógica de datas
+    if (level === 'hard') {
+        const today = new Date();
+        const start = new Date(verse.startDate + 'T00:00:00');
+        const diffTime = Math.abs(today - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const isEndCycle = diffDays >= 50;
+
+        if (isEndCycle) {
+            const todayISO = getLocalDateISO(new Date());
+            verse.startDate = todayISO; 
+            verse.dates = calculateSRSDates(todayISO);
+            showToast('Ciclo final falhou. Reiniciando para consolidar.', 'warning');
+        } else {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = getLocalDateISO(tomorrow);
+            const recoveryDate = findNextLightDay(tomorrowStr, appData);
+
+            if (!verse.dates.includes(recoveryDate)) {
+                verse.dates.push(recoveryDate);
+                verse.dates.sort();
+                showToast(`Revisão extra agendada. Sem estresse!`, 'success');
+            } else {
+                showToast('Reforço já estava agendado.', 'warning');
+            }
+        }
+    } else {
+        showToast('Ótimo! Segue o plano.', 'success');
+    }
+
+    // PASSO 3: PERSISTÊNCIA CONSOLIDADA
+    // Agora salvamos o objeto COMPLETO (Interaction + Datas novas) uma única vez
+    saveToStorage(); // Salva localmente
+    if (window.saveVerseToFirestore) window.saveVerseToFirestore(verse); // Salva na nuvem (Sanitizado automaticamente pelo firebase.js)
+    
+    updateRadar();
+    renderDashboard();
+    backToList();
+}
+
+export function flipCard() {
+    // CRÍTICO: Para o áudio se o usuário desvirar o cartão
+    stopAudio();
+    document.getElementById('flashcardInner').classList.toggle('is-flipped');
+}
+
+export function backToList() {
+    // CRÍTICO: Para o áudio ao voltar para a lista
+    stopAudio();
+
+    document.getElementById('reviewListContainer').style.display = 'block';
+    document.getElementById('flashcardContainer').style.display = 'none';
+    document.getElementById('flashcardInner').classList.remove('is-flipped');
+}
+
+export function closeReview() {
+    // CRÍTICO: Para o áudio ao fechar modal
+    stopAudio();
+
+    document.getElementById('reviewModal').style.display = 'none';
+}
