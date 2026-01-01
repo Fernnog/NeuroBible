@@ -293,7 +293,7 @@ export function startFlashcardFromDash(id) {
     startFlashcard(id);
 }
 
-// --- FUNÇÃO CORRIGIDA: SUPORTE A AUTOSAVE OPCIONAL ---
+// --- FUNÇÃO CORRIGIDA: SUPORTE A LOG E SOURCE ---
 // Adicionado parâmetro autoSave=true por padrão
 export function registerInteraction(verse, autoSave = true) {
     const todayISO = getLocalDateISO(new Date());
@@ -308,7 +308,8 @@ export function registerInteraction(verse, autoSave = true) {
         // CONDICIONAL: Só salva se autoSave for true.
         // Se false, o chamador (ex: handleDifficulty) salvará depois.
         if (autoSave && window.saveVerseToFirestore) {
-            window.saveVerseToFirestore(verse);
+            // ATUALIZAÇÃO: Passando 'Interaction_Register' como source
+            window.saveVerseToFirestore(verse, false, 'Interaction_Register');
         }
         
         // Feedback de recuperação
@@ -403,10 +404,13 @@ export function handleDifficulty(level) {
         showToast('Ótimo! Segue o plano.', 'success');
     }
 
-    // PASSO 3: PERSISTÊNCIA CONSOLIDADA
-    // Agora salvamos o objeto COMPLETO (Interaction + Datas novas) uma única vez
+    // PASSO 3: PERSISTÊNCIA CONSOLIDADA (COM LOGS E SOURCE)
     saveToStorage(); // Salva localmente
-    if (window.saveVerseToFirestore) window.saveVerseToFirestore(verse); // Salva na nuvem (Sanitizado automaticamente pelo firebase.js)
+    if (window.saveVerseToFirestore) {
+        // ATUALIZAÇÃO: Adicionado log e source explícito
+        console.log(`[LOGIC_TRACE] Salvando após feedback '${level}'. Novas datas:`, verse.dates);
+        window.saveVerseToFirestore(verse, false, `Difficulty_${level}`); 
+    }
     
     updateRadar();
     renderDashboard();
