@@ -64,29 +64,43 @@ window.closeAuthModal = window.closeAuthModal || function(){ document.getElement
 
 // --- 4. PONTE DE SINCRONIZAÇÃO (CLOUD -> UI) ---
 // Esta função é chamada pelo firebase.js ou pelo onload quando dados chegam
-// ATUALIZADO v1.2.1: Agora recebe payload completo (verses, settings, stats)
+
+// CONTROLE DE LOCK: Evita que o sync rode duas vezes seguidas (ex: Login + onload)
+let isSyncing = false;
+
 window.handleCloudData = function(payload) {
+    // 1. PROTEÇÃO CONTRA SYNC DUPLO
+    if (isSyncing) {
+        console.warn("[SYNC_BLOCK] 🛡️ Ignorando chamada de sync duplicada/simultânea.");
+        return;
+    }
+    isSyncing = true;
+
+    // INÍCIO DO BLOCO DE DIAGNÓSTICO
+    console.group("[MAIN_SYNC] 🔄 Processando Merge Nuvem -> Local");
+
     // payload agora contém { verses, settings, stats }
-    // Se o firebase antigo chamar apenas com array, tratamos isso (compatibilidade)
     const cloudVerses = Array.isArray(payload) ? payload : payload.verses;
     const cloudSettings = payload.settings;
     const cloudStats = payload.stats;
 
-    if (cloudVerses) {
-        // --- DIAGNÓSTICO DE CONFLITO ---
-        console.group("[MAIN_SYNC] 🔄 Processando Merge Nuvem -> Local");
-        console.log("Versículos na memória antes do sync:", appData.verses.length);
-        console.log("Versículos chegando da nuvem:", cloudVerses.length);
+    // DIAGNÓSTICO: LOG DE COMPARAÇÃO
+    console.log("Versículos na memória antes do sync:", appData.verses.length);
+    if (cloudVerses) console.log("Versículos chegando da nuvem:", cloudVerses.length);
 
-        // Verificação de Sobrescrita Perigosa (Amostragem)
-        if (appData.verses.length > 0 && cloudVerses.length > 0) {
-            const localSample = appData.verses.find(v => v.id === cloudVerses[0].id);
-            if (localSample) {
-                console.log("Comparação de Conflito (Amostra ID " + localSample.id + "):");
-                console.log("   LOCAL (Memória):", { lastInteraction: localSample.lastInteraction, dates: localSample.dates });
-                console.log("   NUVEM (Chegando):", { lastInteraction: cloudVerses[0].lastInteraction, dates: cloudVerses[0].dates });
-            }
+    // Verificação de Sobrescrita Perigosa (Diagnóstico Visual)
+    if (appData.verses.length > 0 && cloudVerses && cloudVerses.length > 0) {
+        // Tenta achar um item em comum para comparar timestamps
+        const localSample = appData.verses.find(v => v.id === cloudVerses[0].id);
+        if (localSample) {
+            console.log("Comparação de Conflito (Amostra ID " + localSample.id + "):");
+            console.log("   LOCAL (Memória):", { lastInteraction: localSample.lastInteraction, dates: localSample.dates });
+            console.log("   NUVEM (Chegando):", { lastInteraction: cloudVerses[0].lastInteraction, dates: cloudVerses[0].dates });
         }
+    }
+
+    if (cloudVerses) {
+        console.log('[Sync] Recebendo pacote completo da nuvem (Dados validados).');
         
         // 1. Prepara o novo estado mesclando com o atual
         const newState = { 
@@ -95,13 +109,11 @@ window.handleCloudData = function(payload) {
         };
 
         // 2. Se vieram configurações da nuvem, aplica (prioridade nuvem)
-        // Isso corrige o bug do "Perfil Equilibrado" resetar
         if (cloudSettings) {
             newState.settings = cloudSettings;
         }
 
         // 3. Se vieram stats da nuvem, aplica
-        // Isso corrige o bug do "Streak Zerado"
         if (cloudStats) {
             // Lógica de segurança simples: confia na nuvem se local for zero ou menor
             if (!appData.stats || cloudStats.streak > (appData.stats.streak || 0)) {
@@ -109,8 +121,6 @@ window.handleCloudData = function(payload) {
             }
         }
         
-        console.groupEnd();
-
         // 4. Atualiza Estado Global na Memória
         setAppData(newState);
         
@@ -129,6 +139,11 @@ window.handleCloudData = function(payload) {
     } else {
         console.log('[Sync] Conectado, mas nenhum dado na nuvem.');
     }
+
+    console.groupEnd(); // Fim do grupo de logs
+
+    // Libera para novo sync após 2 segundos (tempo de segurança)
+    setTimeout(() => { isSyncing = false; }, 2000);
 };
 
 // --- 5. INICIALIZAÇÃO DO SISTEMA ---
