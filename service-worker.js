@@ -1,6 +1,6 @@
-// service-worker.js - V1.1.6 (Atualizado para nova arquitetura)
+// service-worker.js - V1.2.7 (Atualizado para Diagnóstico de Cache)
 
-const CACHE_NAME = 'neurobible-v1.1.6'; // Mudamos o nome para forçar atualização
+const CACHE_NAME = 'neurobible-v1.2.7-DIAGNOSTICO'; // NOME ALTERADO PARA FORÇAR UPDATE
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
