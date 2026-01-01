@@ -73,7 +73,20 @@ window.handleCloudData = function(payload) {
     const cloudStats = payload.stats;
 
     if (cloudVerses) {
-        console.log('[Sync] Recebendo pacote completo da nuvem.');
+        // --- DIAGNÓSTICO DE CONFLITO ---
+        console.group("[MAIN_SYNC] 🔄 Processando Merge Nuvem -> Local");
+        console.log("Versículos na memória antes do sync:", appData.verses.length);
+        console.log("Versículos chegando da nuvem:", cloudVerses.length);
+
+        // Verificação de Sobrescrita Perigosa (Amostragem)
+        if (appData.verses.length > 0 && cloudVerses.length > 0) {
+            const localSample = appData.verses.find(v => v.id === cloudVerses[0].id);
+            if (localSample) {
+                console.log("Comparação de Conflito (Amostra ID " + localSample.id + "):");
+                console.log("   LOCAL (Memória):", { lastInteraction: localSample.lastInteraction, dates: localSample.dates });
+                console.log("   NUVEM (Chegando):", { lastInteraction: cloudVerses[0].lastInteraction, dates: cloudVerses[0].dates });
+            }
+        }
         
         // 1. Prepara o novo estado mesclando com o atual
         const newState = { 
@@ -96,6 +109,8 @@ window.handleCloudData = function(payload) {
             }
         }
         
+        console.groupEnd();
+
         // 4. Atualiza Estado Global na Memória
         setAppData(newState);
         
