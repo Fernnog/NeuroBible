@@ -2,8 +2,11 @@
 
 // --- 1. ESTADO GLOBAL (MODEL) ---
 export let appData = {
-    verses: [], // { id, ref, text, mnemonic, explanation, startDate, dates: [], lastInteraction: null }
-    settings: { planInterval: 1 }, // 1=Diário, 2=Alternado, 3=Leve
+    verses: [], // { id, ref, text, mnemonic, explanation, startDate, dates: [], lastInteraction: null, interactionCount: 0 }
+    settings: { 
+        planInterval: 1, // 1=Diário, 2=Alternado, 3=Leve
+        dailyTarget: 2   // Meta de interações para considerar "Excelência"
+    }, 
     stats: { streak: 0, lastLogin: null } // Controle de Constância
 };
 
@@ -73,7 +76,23 @@ export function runSanityCheck() {
             v.explanation = '';
             dataChanged = true;
         }
+        // Migração Double Check: Garante contador de interação
+        if (!v.hasOwnProperty('interactionCount')) {
+            v.interactionCount = 0;
+            dataChanged = true;
+        }
     });
+
+    // Migração de Configurações (Melhoria Arquitetural)
+    if (!appData.settings) {
+        appData.settings = { planInterval: 1, dailyTarget: 2 };
+        dataChanged = true;
+    } else {
+        if (!appData.settings.hasOwnProperty('dailyTarget')) {
+            appData.settings.dailyTarget = 2; // Padrão: 2 repetições para check duplo
+            dataChanged = true;
+        }
+    }
 
     if (dataChanged) {
         console.log('[System] Migração de dados (Sanity Check) realizada.');
