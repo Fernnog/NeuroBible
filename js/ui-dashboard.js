@@ -91,7 +91,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER (ATUALIZADO v1.2.3) ---
+// --- DASHBOARD RENDER (ATUALIZADO v1.2.6 - Correção de Atraso) ---
 export function renderDashboard() {
     const dash = document.getElementById('todayDashboard');
     const list = document.getElementById('todayList');
@@ -109,18 +109,27 @@ export function renderDashboard() {
     const todayStr = getLocalDateISO(new Date());
     const todayDateObj = new Date(todayStr + 'T00:00:00');
     
-    // 1. Lógica de Atrasados com Cálculo de Data
+    // 1. Lógica de Atrasados Refinada (CORREÇÃO DE LÓGICA)
     let maxDelayDays = 0;
 
     const overdueVerses = appData.verses.filter(v => {
-        // Encontra datas passadas
+        // Filtra apenas as datas agendadas que estão no passado (antes de hoje)
         const pastDates = v.dates.filter(d => d < todayStr);
-        const hasPastDate = pastDates.length > 0;
-        const interactedToday = v.lastInteraction === todayStr; 
         
-        if (hasPastDate && !interactedToday) {
-            // Calcula qual foi a data perdida (pega a mais recente do passado)
-            const missedDateStr = pastDates[pastDates.length - 1]; 
+        // Se não tem datas no passado, não está atrasado.
+        if (pastDates.length === 0) return false;
+
+        // Recupera a data da última interação (se nunca interagiu, assume data muito antiga)
+        const lastInt = v.lastInteraction || '0000-00-00';
+
+        // LÓGICA CORRIGIDA:
+        // O item só é 'Atrasado Real' se existir uma data passada que seja MAIOR que a última interação.
+        // Ou seja: Data do Agendamento > Data da Última Interação.
+        const unmetDeadlines = pastDates.filter(scheduledDate => scheduledDate > lastInt);
+
+        if (unmetDeadlines.length > 0) {
+            // Pega a data mais recente que não foi cumprida para calcular o atraso
+            const missedDateStr = unmetDeadlines[unmetDeadlines.length - 1]; 
             const missedDateObj = new Date(missedDateStr + 'T00:00:00');
             
             // Calcula dias de atraso deste item
@@ -136,10 +145,12 @@ export function renderDashboard() {
             
             return true;
         }
+        
+        // Se a última interação cobriu todas as datas passadas, não está atrasado.
         return false;
     });
 
-    // 2. Atualiza Badge Global de Atraso (Header) - PRIORIDADE 2
+    // 2. Atualiza Badge Global de Atraso (Header)
     if (delayBadge && delayCount) {
         if (maxDelayDays > 0) {
             delayBadge.style.display = 'flex';
@@ -198,7 +209,7 @@ export function renderDashboard() {
              list.innerHTML = `<div class="dash-empty-state">Foque nos atrasados acima!</div>`;
         }
     } else {
-        // Lógica de Renderização com Feedback Visual (PRIORIDADE 1)
+        // Lógica de Renderização com Feedback Visual
         list.innerHTML = todayVerses.map(v => {
             // Verifica se a interação já foi feita HOJE
             const isDone = v.lastInteraction === todayStr;
