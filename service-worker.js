@@ -1,6 +1,6 @@
-// service-worker.js - V1.2.7 (Atualizado para Diagnóstico de Cache)
+// service-worker.js - V1.2.6-FIX-ATRASO (Correção de Lógica de Atraso e Cache)
 
-const CACHE_NAME = 'neurobible-v1.2.7-DIAGNOSTICO'; // NOME ALTERADO PARA FORÇAR UPDATE
+const CACHE_NAME = 'neurobible-v1.2.6-FIX-ATRASO'; // NOME ALTERADO PARA FORÇAR UPDATE
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
