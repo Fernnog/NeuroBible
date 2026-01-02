@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.2.6",
+        date: "2026-01-02",
+        title: "Lógica de Atraso Inteligente",
+        changes: [
+            "🧠 <b>Correção de 'Falsos Atrasados':</b> Ajuste matemático crítico. O sistema agora verifica se sua última revisão cobriu a data agendada. Se você revisou ontem (ou antes) e cobriu a pendência, o item não será mais cobrado hoje.",
+            "📅 <b>Limpeza do Painel:</b> Fim dos versículos 'fantasmas' no painel de atrasados. Apenas itens que realmente não foram revisados desde a data de agendamento aparecerão lá.",
+            "⚡ <b>Cache Refresh:</b> Atualização forçada do Service Worker para garantir que a nova lógica substitua imediatamente a versão antiga em dispositivos móveis."
+        ]
+    },
+    {
         version: "1.2.5",
         date: "2025-12-29",
         title: "Feedback Visual & Gestão de Atraso",
