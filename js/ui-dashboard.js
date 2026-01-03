@@ -5,7 +5,6 @@ import {
 } from './core.js';
 import { saveToStorage } from './storage.js';
 import { calculateSRSDates, generateICSFile, findNextLightDay } from './srs-engine.js';
-// ATUALIZADO v1.2.9: Importando getLevelInfo para UI de Nível
 import { getLocalDateISO, showToast, getLevelInfo } from './utils.js';
 import { startFlashcardFromDash } from './flashcard.js';
 
@@ -540,7 +539,6 @@ function getCurrentLoadMap() {
 
 // --- HELPERS DE MODAL E SETTINGS ---
 
-// ATUALIZADO v1.2.9: Lógica de Streak com Reset Hardcore e XP
 export function checkStreak() {
     const today = getLocalDateISO(new Date());
     if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
@@ -552,30 +550,25 @@ export function checkStreak() {
         yesterdayDate.setDate(yesterdayDate.getDate() - 1);
         const yesterdayStr = getLocalDateISO(yesterdayDate);
 
-        if (lastLogin === yesterdayStr) {
-            // Manteve a chama acesa (incremento ocorre na ação)
-            appData.stats.streak++;
-        } else if (lastLogin < yesterdayStr) {
-            // QUEBROU A CORRENTE! (Hardcore Reset)
+        if (lastLogin < yesterdayStr) {
+            // QUEBROU A CORRENTE (Hardcore Reset)
             if (appData.stats.streak > 0) {
-                // Notificação punitiva
                 showToast("Corrente quebrada. A árvore secou (XP Zerado).", "error");
             }
-            appData.stats.streak = 1; // Reinicia contagem para o dia atual
-            appData.stats.currentXP = 0; // PUNIÇÃO: Zera XP
+            appData.stats.streak = 0; // Reinicia contagem
+            appData.stats.currentXP = 0; // Punição: Zera XP
+        } else {
+            // Manteve a corrente (Login consecutivo)
+            // Apenas atualiza lastLogin, o streak/XP incrementa na ação do flashcard
         }
         
         appData.stats.lastLogin = today;
         saveToStorage();
-
-        if(window.saveStatsToFirestore) {
-            window.saveStatsToFirestore(appData.stats);
-        }
+        if(window.saveStatsToFirestore) window.saveStatsToFirestore(appData.stats);
     }
     
-    // Atualiza UI Visual
-    updateLevelUI();
-
+    updateLevelUI(); // Renderiza o nível atual
+    
     const badge = document.getElementById('streakBadge');
     if(badge && appData.stats) {
         // SVG do Fogo (Flame)
@@ -584,16 +577,48 @@ export function checkStreak() {
     }
 }
 
-// NOVA FUNÇÃO v1.2.9: Renderiza o Badge de Nível (Gamificação)
+// 2. Nova função para Renderizar UI de Nível (v1.2.9)
 export function updateLevelUI() {
-    const badge = document.getElementById('levelBadge');
-    if (!badge || !appData.stats) return;
-
-    // Usa helper para obter título e ícone
-    const info = getLevelInfo(appData.stats.currentXP || 0);
+    // A. Atualiza o Badge do Topo
+    const pill = document.getElementById('levelBadge');
+    const iconEl = document.getElementById('lvlIcon');
+    const nameEl = document.getElementById('lvlName');
     
-    badge.innerText = info.icon;
-    badge.title = `Nível: ${info.title} (${appData.stats.currentXP || 0} XP)`;
+    if (!appData.stats) appData.stats = { currentXP: 0 };
+    const currentXP = appData.stats.currentXP || 0;
+    
+    // Obtém info do nível (segurança caso utils não tenha carregado)
+    const info = (typeof getLevelInfo === 'function') 
+        ? getLevelInfo(currentXP) 
+        : { icon: "🌱", title: "Semente", min: 0, next: 250 }; 
+
+    if (pill && iconEl) {
+        iconEl.innerText = info.icon;
+        if(nameEl) nameEl.innerText = info.title;
+        pill.title = `${info.title}: ${currentXP} XP (Clique para ver detalhes)`;
+    }
+
+    // B. Atualiza a Barra de Progresso (Se o modal estiver aberto ou existirem os elementos)
+    const xpCurrentEl = document.getElementById('xpCurrentDisplay');
+    const xpNextEl = document.getElementById('xpNextDisplay');
+    const barFill = document.getElementById('xpBarFill');
+
+    if (barFill) {
+        let percentage = 0;
+        let range = info.next - info.min;
+        
+        if (info.next === Infinity) {
+            percentage = 100; // Nível Máximo
+        } else {
+            let xpInLevel = currentXP - info.min;
+            percentage = Math.floor((xpInLevel / range) * 100);
+        }
+        
+        // Renderiza
+        barFill.style.width = `${percentage}%`;
+        if(xpCurrentEl) xpCurrentEl.innerText = `${currentXP} XP`;
+        if(xpNextEl) xpNextEl.innerText = info.next === Infinity ? "Nível Máximo" : `Próx: ${info.next} XP`;
+    }
 }
 
 export function updatePacingUI() {
