@@ -259,10 +259,8 @@ export function toggleExplanation() {
     
     const verse = appData.verses.find(v => v.id === currentReviewId.value);
     
-    // REGISTRA A INTERAÇÃO (Modo Auto-Save ativo)
-    if (verse) {
-        registerInteraction(verse);
-    }
+    // [MODIFICADO] NÃO chamamos mais registerInteraction aqui.
+    // Visualizar a explicação não conta como interação de memorização.
     
     renderCardContent(verse);
     updateHintButtonUI();
@@ -281,8 +279,8 @@ export function advanceStage() {
     
     const verse = appData.verses.find(v => v.id === currentReviewId.value);
     
-    // Registra interação técnica
-    registerInteraction(verse);
+    // [MODIFICADO] NÃO chamamos mais registerInteraction aqui.
+    // Avançar etapas de dica é parte do processo, não uma conclusão.
     
     renderCardContent(verse);
     updateHintButtonUI();
@@ -293,20 +291,24 @@ export function startFlashcardFromDash(id) {
     startFlashcard(id);
 }
 
-// --- FUNÇÃO ATUALIZADA: SUPORTE A DOUBLE CHECK & INCREMENTO ---
-export function registerInteraction(verse, autoSave = true) {
+// --- FUNÇÃO ATUALIZADA: SUPORTE A SUCESSO ESTRITO (Parâmetro isSuccess) ---
+export function registerInteraction(verse, autoSave = true, isSuccess = false) {
     const todayISO = getLocalDateISO(new Date());
     
     // Verifica se estava atrasado (para Toast de recuperação)
     const wasOverdue = verse.dates.some(d => d < todayISO) && verse.lastInteraction !== todayISO;
 
-    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO (Lógica Double Check) ---
+    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO (Lógica Condicional) ---
     let dataUpdated = false;
 
     if (verse.lastInteraction !== todayISO) {
         // Primeira vez no dia (ou dia diferente)
+        // Atualiza a data para registrar que o usuário "viu" o cartão hoje
         verse.lastInteraction = todayISO;
-        verse.interactionCount = 1; // Reinicia contagem para 1
+        
+        // Se for sucesso (Easy), inicia contagem. Se for erro (Hard), inicia/mantém zero.
+        verse.interactionCount = isSuccess ? 1 : 0;
+        
         dataUpdated = true;
         
         // Feedback de recuperação
@@ -314,14 +316,18 @@ export function registerInteraction(verse, autoSave = true) {
             showToast("🚀 Progresso registrado! Item recuperado.", "success");
         }
     } else {
-        // Já interagiu hoje: Incrementa o contador
-        verse.interactionCount = (verse.interactionCount || 1) + 1;
-        dataUpdated = true;
-        // Feedback discreto para interação extra
-        if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x)`, "success");
+        // Já interagiu hoje:
+        // Só incrementa o contador se for SUCESSO (Easy/Acertei)
+        if (isSuccess) {
+            verse.interactionCount = (verse.interactionCount || 0) + 1;
+            dataUpdated = true;
+            // Feedback discreto para interação extra
+            if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x)`, "success");
+        }
+        // Se for falha (Hard), não incrementamos o contador, mas o item continua "visitado" no dia.
     }
 
-    // Persistência na Nuvem (CRÍTICO: Dispara se houve alteração, independente da data)
+    // Persistência na Nuvem (Dispara se houve alteração)
     if (dataUpdated && autoSave && window.saveVerseToFirestore) {
         // Passando 'Interaction_Register' como source
         window.saveVerseToFirestore(verse, false, 'Interaction_Register');
@@ -366,9 +372,12 @@ export function handleDifficulty(level) {
     if (verseIndex === -1) return;
     const verse = appData.verses[verseIndex];
 
-    // PASSO 1: Registra interação na memória mas NÃO SALVA NO BANCO AINDA (false)
-    // Isso atualiza lastInteraction e interactionCount na memória
-    registerInteraction(verse, false);
+    // [MODIFICADO] Determina se é sucesso para incrementar contador
+    const isSuccess = (level === 'easy');
+
+    // PASSO 1: Registra interação (false = não salva no banco imediatamente)
+    // Passamos o isSuccess para controlar o incremento do contador
+    registerInteraction(verse, false, isSuccess);
 
     // PASSO 2: Aplica lógica de datas
     if (level === 'hard') {
@@ -404,7 +413,7 @@ export function handleDifficulty(level) {
     // PASSO 3: PERSISTÊNCIA CONSOLIDADA (COM LOGS E SOURCE)
     saveToStorage(); // Salva localmente
     if (window.saveVerseToFirestore) {
-        console.log(`[LOGIC_TRACE] Salvando após feedback '${level}'. Count: ${verse.interactionCount}`);
+        // console.log(`[LOGIC_TRACE] Salvando após feedback '${level}'. Count: ${verse.interactionCount}`);
         window.saveVerseToFirestore(verse, false, `Difficulty_${level}`); 
     }
     
