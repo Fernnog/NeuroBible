@@ -183,23 +183,28 @@ header {
     font-weight: bold; padding: 5px 12px; border-radius: 20px;
     font-size: 0.9rem;
 }
-
 .dash-list {
     display: flex; flex-direction: column; gap: 8px;
-    /* AJUSTE: Padding extra na direita para acomodar o badge que "vaza" para fora */
-    padding-right: 15px; 
+    /* Ajuste Mobile: Espaço extra na lateral para o badge não cortar */
+    padding-right: 5px; 
 }
 
-/* --- ATUALIZADO: ITEM DA LISTA (Container) --- */
+/* --- ITEM DA LISTA (MODIFICADO PARA SUPORTAR BADGE) --- */
 .dash-item {
-    background: var(--white); border: 1px solid var(--border);
-    padding: 12px; border-radius: 8px;
-    display: flex; justify-content: space-between; align-items: center;
-    cursor: pointer; transition: 0.2s; color: var(--text);
+    background: var(--white); 
+    border: 1px solid var(--border);
+    padding: 12px; 
+    border-radius: 8px;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    cursor: pointer; 
+    transition: 0.2s; 
+    color: var(--text);
     
-    /* MODIFICAÇÕES PARA O BADGE DE CONTADOR */
-    position: relative; /* Necessário para posicionar o badge */
-    overflow: visible !important; /* Permite que o badge saia para fora da borda */
+    /* MODIFICAÇÃO PRINCIPAL: Habilita badge externo */
+    position: relative;
+    overflow: visible !important; 
 }
 
 .dash-item:hover {
@@ -207,43 +212,15 @@ header {
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* Estilo para item concluído (Prioridade 1 - Check Simples) */
-.dash-item.completed {
-    border-color: #2ecc71;
-    background-color: #f0fdf4; /* Verde bem claro */
-    box-shadow: 0 2px 8px rgba(46, 204, 113, 0.15);
-}
-.dash-item.completed small {
-    color: #27ae60 !important;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* Estilo para Dupla Interação (Mantido para compatibilidade, caso usado) */
-.dash-item.completed-double {
-    background-color: #dcfce7;
-    border-color: #27ae60;
-    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
-}
-.dash-item.completed-double small {
-    color: #1e8449 !important;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* --- NOVO: BADGE DE CONTADOR DE INTERAÇÕES (CLEAN UI) --- */
+/* --- BADGE DE INTERAÇÃO (NOVO - Laranja & Posicionado) --- */
 .interaction-badge {
     position: absolute;
     top: 50%;
-    /* AJUSTE: Empurrado 15px para fora da borda direita */
-    right: -15px; 
+    /* Empurra para fora, pendurado na borda */
+    right: -12px; 
     transform: translateY(-50%);
     
-    /* AJUSTE: Cor Laranja/Dourado para contraste com o verde */
+    /* Cor Laranja/Dourado para contraste */
     background-color: #f39c12; 
     color: var(--white);
     
@@ -259,13 +236,45 @@ header {
     align-items: center;
     justify-content: center;
     
-    /* Borda branca para criar recorte visual */
     border: 2px solid var(--white);
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     z-index: 10;
 }
 
-/* --- FIM DO NOVO BADGE --- */
+/* Estilo para item concluído */
+.dash-item.completed {
+    border-color: #2ecc71;
+    background-color: #f0fdf4; /* Verde bem claro */
+    box-shadow: 0 2px 8px rgba(46, 204, 113, 0.15);
+    
+    /* ZONA DE EXCLUSÃO: Força o texto interno a parar antes de chegar no badge */
+    padding-right: 45px !important; 
+}
+.dash-item.completed small {
+    color: #27ae60 !important;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    /* Garante que o texto fique alinhado à direita no espaço que sobra */
+    white-space: nowrap;
+}
+
+/* Estilo Legado para Dupla Interação (Mantido para compatibilidade, mas o badge agora domina) */
+.dash-item.completed-double {
+    background-color: #dcfce7; 
+    border-color: #27ae60;      
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
+    /* Também aplica a zona de exclusão aqui */
+    padding-right: 45px !important;
+}
+.dash-item.completed-double small {
+    color: #1e8449 !important; 
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 
 .dash-empty-state {
     text-align: center;
@@ -278,7 +287,7 @@ header {
     border: 1px dashed var(--border);
 }
 
-/* --- NOVO: INPUT SECTION (ACCORDION DE CADASTRO) --- */
+/* --- INPUT SECTION (ACCORDION DE CADASTRO) --- */
 
 .input-section {
     background: var(--white);
@@ -1273,3 +1282,46 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
 .auth-form-wrapper input { border: 2px solid var(--border); padding: 12px 15px; border-radius: 8px; }
 .auth-form-wrapper input:focus { border-color: var(--accent); }
 .btn-full { width: 100%; border-radius: 8px; justify-content: center; }
+
+/* Estilos Adicionais para v1.1.6 (Podem ir para style.css depois) */
+/* Cross-fade Animation Classes */
+.card-content-hidden {
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+#cardTextContent, #mnemonicContainer, #explanationContainer {
+    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Container de Botões Dinâmicos */
+.hint-controls-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 5px;
+    min-height: 50px; /* Evita pulo de layout */
+    justify-content: center;
+}
+
+/* Botão Ghost para UX Secundária */
+.btn-ghost-accent {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: 0.85rem;
+    cursor: pointer;
+    opacity: 0.8;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    padding: 5px 10px;
+    transition: all 0.2s;
+}
+.btn-ghost-accent:hover {
+    opacity: 1;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 4px;
+}
