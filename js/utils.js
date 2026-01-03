@@ -57,6 +57,21 @@ export function escapeICS(str) {
 }
 
 /**
+ * v1.2.9 - Lógica de Níveis (Gamificação)
+ * Retorna informações completas do nível baseado no XP acumulado.
+ * @param {number} xp - Pontuação atual do usuário
+ * @returns {object} { icon, title, min, next }
+ */
+export function getLevelInfo(xp) {
+    const safeXP = xp || 0;
+    if (safeXP >= 1500) return { icon: "📜", title: "Bereano", min: 1500, next: Infinity };
+    if (safeXP >= 1000) return { icon: "🍎", title: "Frutífera", min: 1000, next: 1500 };
+    if (safeXP >= 500)  return { icon: "🌳", title: "Tronco Forte", min: 500, next: 1000 };
+    if (safeXP >= 250)  return { icon: "🌿", title: "Raízes", min: 250, next: 500 };
+    return { icon: "🌱", title: "Semente", min: 0, next: 250 };
+}
+
+/**
  * Exibe as notificações flutuantes (Toasts) na tela.
  * Atualizado v1.2.0: Uso de SVGs profissionais em vez de emojis.
  * @param {string} msg - A mensagem a ser exibida.
