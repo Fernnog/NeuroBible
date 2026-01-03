@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.2.7",
+        date: "2026-01-02",
+        title: "Contador de Interações & Clean UI",
+        changes: [
+            "🎨 <b>Badge de Intensidade:</b> Novo indicador visual (laranja) flutuante na borda do cartão. Agora, o número de repetições é exibido de forma elegante sem poluir o status de conclusão.",
+            "✨ <b>Layout Seguro:</b> Implementação de uma 'Zona de Exclusão' no CSS que impede fisicamente que o texto 'Feito' seja atropelado pelo contador, independentemente do tamanho da tela.",
+            "🧹 <b>Visual Unificado:</b> Fim da poluição visual de múltiplos 'checks'. O estado de conclusão agora é único e limpo, delegando a informação de quantidade exclusivamente ao novo Badge."
+        ]
+    },
+    {
         version: "1.2.6",
         date: "2026-01-02",
         title: "Lógica de Atraso Inteligente",
