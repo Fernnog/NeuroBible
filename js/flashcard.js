@@ -5,7 +5,8 @@ import {
     isExplanationActive, setIsExplanationActive 
 } from './core.js';
 import { saveToStorage } from './storage.js';
-import { getAcronym, generateClozeText, getLocalDateISO, showToast } from './utils.js';
+// ATUALIZADO v1.2.9: Importando getLevelInfo
+import { getAcronym, generateClozeText, getLocalDateISO, showToast, getLevelInfo } from './utils.js';
 import { renderDashboard, updateRadar } from './ui-dashboard.js';
 import { calculateSRSDates, findNextLightDay } from './srs-engine.js';
 
@@ -320,9 +321,29 @@ export function registerInteraction(verse, autoSave = true, isSuccess = false) {
         // Só incrementa o contador se for SUCESSO (Easy/Acertei)
         if (isSuccess) {
             verse.interactionCount = (verse.interactionCount || 0) + 1;
+            
+            // ATUALIZADO v1.2.9: Lógica de XP e Level Up (Gamificação)
+            if (typeof appData.stats.currentXP === 'undefined') appData.stats.currentXP = 0;
+            
+            const oldLevel = getLevelInfo(appData.stats.currentXP).title;
+            appData.stats.currentXP++; // +1 XP por acerto
+            const newLevelInfo = getLevelInfo(appData.stats.currentXP);
+            
             dataUpdated = true;
-            // Feedback discreto para interação extra
-            if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x)`, "success");
+            
+            // Feedback Inteligente de Nível
+            if (newLevelInfo.title !== oldLevel) {
+                showToast(`🎉 LEVEL UP! Você agora é: ${newLevelInfo.title}`, "success");
+                const badge = document.getElementById('levelBadge');
+                if(badge) {
+                    badge.classList.remove('level-up-anim');
+                    void badge.offsetWidth; // Trigger reflow
+                    badge.classList.add('level-up-anim');
+                }
+            } else {
+                // Feedback discreto para interação extra
+                if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x) | +1 XP`, "success");
+            }
         }
         // Se for falha (Hard), não incrementamos o contador, mas o item continua "visitado" no dia.
     }
@@ -335,7 +356,7 @@ export function registerInteraction(verse, autoSave = true, isSuccess = false) {
 
     // --- BLOCO 2: ATUALIZAÇÃO DO STREAK (Sempre Executa na Interação) ---
     
-    if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO };
+    if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
     
     let statsChanged = false;
 
@@ -360,7 +381,7 @@ export function registerInteraction(verse, autoSave = true, isSuccess = false) {
         }
     }
     
-    // Renderiza Dashboard (Atualiza checks verdes e duplos)
+    // Renderiza Dashboard (Atualiza checks verdes, duplos e Nível)
     renderDashboard(); 
 }
 
