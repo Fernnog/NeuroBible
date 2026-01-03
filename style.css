@@ -184,22 +184,22 @@ header {
     font-size: 0.9rem;
 }
 
-/* --- ATUALIZADO: Ajuste na Lista para Badges --- */
 .dash-list {
     display: flex; flex-direction: column; gap: 8px;
-    padding-right: 5px; /* Evita corte do badge */
+    /* AJUSTE: Padding extra na direita para acomodar o badge que "vaza" para fora */
+    padding-right: 15px; 
 }
 
-/* --- ATUALIZADO: Item do Dashboard (Suporte a Badge) --- */
+/* --- ATUALIZADO: ITEM DA LISTA (Container) --- */
 .dash-item {
     background: var(--white); border: 1px solid var(--border);
     padding: 12px; border-radius: 8px;
     display: flex; justify-content: space-between; align-items: center;
     cursor: pointer; transition: 0.2s; color: var(--text);
     
-    /* MODIFICAÇÃO PARA O BADGE */
-    position: relative; 
-    overflow: visible; 
+    /* MODIFICAÇÕES PARA O BADGE DE CONTADOR */
+    position: relative; /* Necessário para posicionar o badge */
+    overflow: visible !important; /* Permite que o badge saia para fora da borda */
 }
 
 .dash-item:hover {
@@ -207,7 +207,7 @@ header {
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* Estilo para item concluído (Check Simples - Limpo) */
+/* Estilo para item concluído (Prioridade 1 - Check Simples) */
 .dash-item.completed {
     border-color: #2ecc71;
     background-color: #f0fdf4; /* Verde bem claro */
@@ -221,14 +221,30 @@ header {
     gap: 4px;
 }
 
-/* --- NOVO: BADGE DE INTERAÇÃO (CONTADOR) --- */
+/* Estilo para Dupla Interação (Mantido para compatibilidade, caso usado) */
+.dash-item.completed-double {
+    background-color: #dcfce7;
+    border-color: #27ae60;
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
+}
+.dash-item.completed-double small {
+    color: #1e8449 !important;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* --- NOVO: BADGE DE CONTADOR DE INTERAÇÕES (CLEAN UI) --- */
 .interaction-badge {
     position: absolute;
     top: 50%;
-    right: -10px; /* Metade para fora */
+    /* AJUSTE: Empurrado 15px para fora da borda direita */
+    right: -15px; 
     transform: translateY(-50%);
     
-    background-color: var(--accent); /* Azul Padrão */
+    /* AJUSTE: Cor Laranja/Dourado para contraste com o verde */
+    background-color: #f39c12; 
     color: var(--white);
     
     min-width: 24px;
@@ -243,28 +259,13 @@ header {
     align-items: center;
     justify-content: center;
     
+    /* Borda branca para criar recorte visual */
     border: 2px solid var(--white);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     z-index: 10;
-    
-    /* Prioridade 2: Animação de Pulso ao surgir */
-    animation: badgePulse 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Prioridade 3: Cores de Gamificação */
-.interaction-badge.gold {
-    background-color: #f1c40f; /* Ouro (Intensidade Média) */
-    border-color: #fff;
-}
-.interaction-badge.purple {
-    background-color: #9b59b6; /* Roxo (Mestre) */
-    border-color: #fff;
-}
-
-@keyframes badgePulse {
-    0% { transform: translateY(-50%) scale(0); opacity: 0; }
-    100% { transform: translateY(-50%) scale(1); opacity: 1; }
-}
+/* --- FIM DO NOVO BADGE --- */
 
 .dash-empty-state {
     text-align: center;
@@ -1070,9 +1071,6 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
     }
     
     .search-wrapper input:focus { width: 120px; }
-
-    /* Ajuste Mobile para Badge */
-    .dash-list { padding-right: 15px; }
 }
 
 .toast-undo-btn {
