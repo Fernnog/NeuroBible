@@ -7,7 +7,8 @@ export let appData = {
         planInterval: 1, // 1=Diário, 2=Alternado, 3=Leve
         dailyTarget: 2   // Meta de interações para considerar "Excelência"
     }, 
-    stats: { streak: 0, lastLogin: null } // Controle de Constância
+    // v1.2.9: Adicionado currentXP para controle de Gamificação
+    stats: { streak: 0, lastLogin: null, currentXP: 0 } 
 };
 
 // Variáveis de Controle de Interface (Estado Volátil)
@@ -90,6 +91,18 @@ export function runSanityCheck() {
     } else {
         if (!appData.settings.hasOwnProperty('dailyTarget')) {
             appData.settings.dailyTarget = 2; // Padrão: 2 repetições para check duplo
+            dataChanged = true;
+        }
+    }
+
+    // Migração de Stats (v1.2.9 - Gamificação)
+    if (!appData.stats) {
+        appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
+        dataChanged = true;
+    } else {
+        // Garante que a propriedade currentXP exista para usuários antigos
+        if (!appData.stats.hasOwnProperty('currentXP')) {
+            appData.stats.currentXP = 0; // Inicia zerado para a nova mecânica
             dataChanged = true;
         }
     }
