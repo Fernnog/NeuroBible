@@ -91,7 +91,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER (ATUALIZADO v1.2.6 - Correção de Atraso) ---
+// --- DASHBOARD RENDER (ATUALIZADO - Double Check Visual) ---
 export function renderDashboard() {
     const dash = document.getElementById('todayDashboard');
     const list = document.getElementById('todayList');
@@ -100,7 +100,6 @@ export function renderDashboard() {
     const overdueList = document.getElementById('overdueList');
     const overdueCount = document.getElementById('overdueCount');
     
-    // Elementos do Badge de Atraso (Novo)
     const delayBadge = document.getElementById('delayBadge');
     const delayCount = document.getElementById('delayCount');
 
@@ -109,48 +108,32 @@ export function renderDashboard() {
     const todayStr = getLocalDateISO(new Date());
     const todayDateObj = new Date(todayStr + 'T00:00:00');
     
-    // 1. Lógica de Atrasados Refinada (CORREÇÃO DE LÓGICA)
+    // 1. Lógica de Atrasados
     let maxDelayDays = 0;
 
     const overdueVerses = appData.verses.filter(v => {
-        // Filtra apenas as datas agendadas que estão no passado (antes de hoje)
         const pastDates = v.dates.filter(d => d < todayStr);
-        
-        // Se não tem datas no passado, não está atrasado.
         if (pastDates.length === 0) return false;
 
-        // Recupera a data da última interação (se nunca interagiu, assume data muito antiga)
         const lastInt = v.lastInteraction || '0000-00-00';
-
-        // LÓGICA CORRIGIDA:
-        // O item só é 'Atrasado Real' se existir uma data passada que seja MAIOR que a última interação.
-        // Ou seja: Data do Agendamento > Data da Última Interação.
         const unmetDeadlines = pastDates.filter(scheduledDate => scheduledDate > lastInt);
 
         if (unmetDeadlines.length > 0) {
-            // Pega a data mais recente que não foi cumprida para calcular o atraso
             const missedDateStr = unmetDeadlines[unmetDeadlines.length - 1]; 
             const missedDateObj = new Date(missedDateStr + 'T00:00:00');
-            
-            // Calcula dias de atraso deste item
             const diffTime = Math.abs(todayDateObj - missedDateObj);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            // Atualiza o recorde de atraso global
             if (diffDays > maxDelayDays) maxDelayDays = diffDays;
 
-            // Formatação DD/MM/AAAA para exibição
             v._displayMissedDate = missedDateStr.split('-').reverse().join('/');
             v._displayDelayDays = diffDays;
-            
             return true;
         }
-        
-        // Se a última interação cobriu todas as datas passadas, não está atrasado.
         return false;
     });
 
-    // 2. Atualiza Badge Global de Atraso (Header)
+    // 2. Atualiza Badge Global de Atraso
     if (delayBadge && delayCount) {
         if (maxDelayDays > 0) {
             delayBadge.style.display = 'flex';
@@ -166,7 +149,7 @@ export function renderDashboard() {
 
     dash.style.display = 'block';
 
-    // 3. Renderiza Atrasados com a Nova UI (CARD RESTAURADO)
+    // 3. Renderiza Atrasados
     if (overdueVerses.length > 0 && overduePanel) {
         overduePanel.style.display = 'block';
         if(overdueCount) overdueCount.innerText = overdueVerses.length;
@@ -183,7 +166,6 @@ export function renderDashboard() {
                     </div>
                     
                     <div style="display:flex; align-items:center; width:100%; margin-top:8px;">
-                        <!-- CARD DE DATA RESTAURADO -->
                         <span class="overdue-date-chip" title="Data original do agendamento">
                             ${calendarIcon} ${v._displayMissedDate}
                         </span>
@@ -209,26 +191,33 @@ export function renderDashboard() {
              list.innerHTML = `<div class="dash-empty-state">Foque nos atrasados acima!</div>`;
         }
     } else {
-        // Lógica de Renderização com Feedback Visual
+        // Lógica de Renderização com Feedback Visual (Double Check)
         list.innerHTML = todayVerses.map(v => {
-            // Verifica se a interação já foi feita HOJE
             const isDone = v.lastInteraction === todayStr;
+            const count = v.interactionCount || 0;
             
-            // Define classes e ícones condicionalmente
-            const itemClass = isDone ? 'dash-item completed' : 'dash-item';
-            const statusIcon = isDone 
-                ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Feito`
-                : `<small style="color:var(--accent)">▶ Treinar</small>`;
+            let itemClass = 'dash-item';
+            let statusIcon = `<small style="color:var(--accent)">▶ Treinar</small>`;
 
-            // Se for feito, remove o estilo inline do small original e usa o do CSS
-            const smallTag = isDone 
-                ? `<small>${statusIcon}</small>` 
-                : `${statusIcon}`;
+            if (isDone) {
+                // Ícone SVG de Check
+                const checkSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+                
+                if (count >= 2) {
+                    // DUPLA INTERAÇÃO: Verde mais escuro + 2 Checks
+                    itemClass = 'dash-item completed-double';
+                    statusIcon = `<small>${checkSVG}${checkSVG} Feito (${count}x)</small>`;
+                } else {
+                    // INTERAÇÃO ÚNICA: Verde padrão + 1 Check
+                    itemClass = 'dash-item completed';
+                    statusIcon = `<small>${checkSVG} Feito</small>`;
+                }
+            }
 
             return `
             <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})">
                 <strong>${v.ref}</strong>
-                ${smallTag}
+                ${statusIcon}
             </div>
             `;
         }).join('');
@@ -554,13 +543,11 @@ export function checkStreak() {
         appData.stats.lastLogin = today;
         saveToStorage();
 
-        // Persistência na Nuvem (Priority 2)
         if(window.saveStatsToFirestore) {
             window.saveStatsToFirestore(appData.stats);
         }
     }
     const badge = document.getElementById('streakBadge');
-    // ATUALIZADO: PRIORIDADE 3 (Força atualização visual sempre)
     if(badge && appData.stats) {
         // SVG do Fogo (Flame)
         const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
