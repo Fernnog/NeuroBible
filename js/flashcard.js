@@ -259,7 +259,7 @@ export function toggleExplanation() {
     
     const verse = appData.verses.find(v => v.id === currentReviewId.value);
     
-    // REGISTRA A INTERAÇÃO
+    // REGISTRA A INTERAÇÃO (Modo Auto-Save ativo)
     if (verse) {
         registerInteraction(verse);
     }
@@ -281,7 +281,7 @@ export function advanceStage() {
     
     const verse = appData.verses.find(v => v.id === currentReviewId.value);
     
-    // Registra interação técnica (usuário está ativo)
+    // Registra interação técnica
     registerInteraction(verse);
     
     renderCardContent(verse);
@@ -293,56 +293,54 @@ export function startFlashcardFromDash(id) {
     startFlashcard(id);
 }
 
-// --- FUNÇÃO CORRIGIDA: SUPORTE A LOG E SOURCE ---
-// Adicionado parâmetro autoSave=true por padrão
+// --- FUNÇÃO ATUALIZADA: SUPORTE A DOUBLE CHECK & INCREMENTO ---
 export function registerInteraction(verse, autoSave = true) {
     const todayISO = getLocalDateISO(new Date());
     
-    // Verifica se estava atrasado
+    // Verifica se estava atrasado (para Toast de recuperação)
     const wasOverdue = verse.dates.some(d => d < todayISO) && verse.lastInteraction !== todayISO;
 
-    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO (Só se necessário) ---
+    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO (Lógica Double Check) ---
+    let dataUpdated = false;
+
     if (verse.lastInteraction !== todayISO) {
+        // Primeira vez no dia (ou dia diferente)
         verse.lastInteraction = todayISO;
-        
-        // CONDICIONAL: Só salva se autoSave for true.
-        // Se false, o chamador (ex: handleDifficulty) salvará depois.
-        if (autoSave && window.saveVerseToFirestore) {
-            // ATUALIZAÇÃO: Passando 'Interaction_Register' como source
-            window.saveVerseToFirestore(verse, false, 'Interaction_Register');
-        }
+        verse.interactionCount = 1; // Reinicia contagem para 1
+        dataUpdated = true;
         
         // Feedback de recuperação
         if (wasOverdue) {
             showToast("🚀 Progresso registrado! Item recuperado.", "success");
         }
+    } else {
+        // Já interagiu hoje: Incrementa o contador
+        verse.interactionCount = (verse.interactionCount || 1) + 1;
+        dataUpdated = true;
+        // Feedback discreto para interação extra
+        if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x)`, "success");
+    }
+
+    // Persistência na Nuvem (CRÍTICO: Dispara se houve alteração, independente da data)
+    if (dataUpdated && autoSave && window.saveVerseToFirestore) {
+        // Passando 'Interaction_Register' como source
+        window.saveVerseToFirestore(verse, false, 'Interaction_Register');
     }
 
     // --- BLOCO 2: ATUALIZAÇÃO DO STREAK (Sempre Executa na Interação) ---
     
-    console.log("--- DEBUG STREAK --- Checking...");
-
     if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO };
     
     let statsChanged = false;
 
     // Cenário A: Streak Zerado/Inválido -> Força Ignição (1)
     if (!appData.stats.streak || appData.stats.streak <= 0) {
-        console.log("🔥 FIX: Streak estava 0 ou nulo. Forçando 1.");
         appData.stats.streak = 1;
         appData.stats.lastLogin = todayISO;
         statsChanged = true;
-        
-        // Atualização Visual Forçada Imediata
-        const badge = document.getElementById('streakBadge');
-        if(badge) {
-            const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
-            badge.innerHTML = `${flameIcon} 1`;
-        }
     } 
     // Cenário B: Já tem Streak, só garante lastLogin hoje
     else if (appData.stats.lastLogin !== todayISO) {
-        console.log("🔥 FIX: Atualizando lastLogin para hoje.");
         appData.stats.lastLogin = todayISO;
         statsChanged = true;
     }
@@ -352,12 +350,11 @@ export function registerInteraction(verse, autoSave = true) {
     
     if (statsChanged) {
         if (window.saveStatsToFirestore) {
-            console.log("Disparando salvamento de Stats...");
             window.saveStatsToFirestore(appData.stats);
         }
     }
     
-    // Renderiza Dashboard (Atualiza checks verdes)
+    // Renderiza Dashboard (Atualiza checks verdes e duplos)
     renderDashboard(); 
 }
 
@@ -370,7 +367,7 @@ export function handleDifficulty(level) {
     const verse = appData.verses[verseIndex];
 
     // PASSO 1: Registra interação na memória mas NÃO SALVA NO BANCO AINDA (false)
-    // Isso atualiza lastInteraction e streak na memória local
+    // Isso atualiza lastInteraction e interactionCount na memória
     registerInteraction(verse, false);
 
     // PASSO 2: Aplica lógica de datas
@@ -407,8 +404,7 @@ export function handleDifficulty(level) {
     // PASSO 3: PERSISTÊNCIA CONSOLIDADA (COM LOGS E SOURCE)
     saveToStorage(); // Salva localmente
     if (window.saveVerseToFirestore) {
-        // ATUALIZAÇÃO: Adicionado log e source explícito
-        console.log(`[LOGIC_TRACE] Salvando após feedback '${level}'. Novas datas:`, verse.dates);
+        console.log(`[LOGIC_TRACE] Salvando após feedback '${level}'. Count: ${verse.interactionCount}`);
         window.saveVerseToFirestore(verse, false, `Difficulty_${level}`); 
     }
     
