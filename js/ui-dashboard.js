@@ -5,7 +5,8 @@ import {
 } from './core.js';
 import { saveToStorage } from './storage.js';
 import { calculateSRSDates, generateICSFile, findNextLightDay } from './srs-engine.js';
-import { getLocalDateISO, showToast } from './utils.js';
+// ATUALIZADO v1.2.9: Importando getLevelInfo para UI de Nível
+import { getLocalDateISO, showToast, getLevelInfo } from './utils.js';
 import { startFlashcardFromDash } from './flashcard.js';
 
 // --- LOGICA DO NOVO ACCORDION (INPUT SECTION) ---
@@ -539,9 +540,10 @@ function getCurrentLoadMap() {
 
 // --- HELPERS DE MODAL E SETTINGS ---
 
+// ATUALIZADO v1.2.9: Lógica de Streak com Reset Hardcore e XP
 export function checkStreak() {
     const today = getLocalDateISO(new Date());
-    if (!appData.stats) appData.stats = { streak: 0, lastLogin: null };
+    if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
     
     const lastLogin = appData.stats.lastLogin;
     
@@ -551,9 +553,16 @@ export function checkStreak() {
         const yesterdayStr = getLocalDateISO(yesterdayDate);
 
         if (lastLogin === yesterdayStr) {
+            // Manteve a chama acesa (incremento ocorre na ação)
             appData.stats.streak++;
         } else if (lastLogin < yesterdayStr) {
-            appData.stats.streak = 1;
+            // QUEBROU A CORRENTE! (Hardcore Reset)
+            if (appData.stats.streak > 0) {
+                // Notificação punitiva
+                showToast("Corrente quebrada. A árvore secou (XP Zerado).", "error");
+            }
+            appData.stats.streak = 1; // Reinicia contagem para o dia atual
+            appData.stats.currentXP = 0; // PUNIÇÃO: Zera XP
         }
         
         appData.stats.lastLogin = today;
@@ -563,12 +572,28 @@ export function checkStreak() {
             window.saveStatsToFirestore(appData.stats);
         }
     }
+    
+    // Atualiza UI Visual
+    updateLevelUI();
+
     const badge = document.getElementById('streakBadge');
     if(badge && appData.stats) {
         // SVG do Fogo (Flame)
         const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
         badge.innerHTML = `${flameIcon} ${appData.stats.streak}`;
     }
+}
+
+// NOVA FUNÇÃO v1.2.9: Renderiza o Badge de Nível (Gamificação)
+export function updateLevelUI() {
+    const badge = document.getElementById('levelBadge');
+    if (!badge || !appData.stats) return;
+
+    // Usa helper para obter título e ícone
+    const info = getLevelInfo(appData.stats.currentXP || 0);
+    
+    badge.innerText = info.icon;
+    badge.title = `Nível: ${info.title} (${appData.stats.currentXP || 0} XP)`;
 }
 
 export function updatePacingUI() {
@@ -674,7 +699,7 @@ export function clearData() {
     if(confirm('Limpar TUDO? (Isso resetará seus planos e streaks)')) {
         appData.verses = [];
         appData.settings = { planInterval: 1 };
-        appData.stats = { streak: 0, lastLogin: null };
+        appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
         saveToStorage();
         updateTable();
         updateRadar();
