@@ -91,7 +91,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER (ATUALIZADO - Double Check Visual) ---
+// --- DASHBOARD RENDER (ATUALIZADO - BADGE CLEAN UI) ---
 export function renderDashboard() {
     const dash = document.getElementById('todayDashboard');
     const list = document.getElementById('todayList');
@@ -191,33 +191,49 @@ export function renderDashboard() {
              list.innerHTML = `<div class="dash-empty-state">Foque nos atrasados acima!</div>`;
         }
     } else {
-        // Lógica de Renderização com Feedback Visual (Double Check)
+        // Lógica de Renderização com Badge (Prioridades 1, 2 e 3)
         list.innerHTML = todayVerses.map(v => {
             const isDone = v.lastInteraction === todayStr;
             const count = v.interactionCount || 0;
             
+            // 1. Estado Base Simplificado
             let itemClass = 'dash-item';
+            
+            // 2. Definição do Ícone de Status (Apenas "Treinar" ou "Feito")
             let statusIcon = `<small style="color:var(--accent)">▶ Treinar</small>`;
 
             if (isDone) {
-                // Ícone SVG de Check
-                const checkSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+                // Fundo verde claro padrão para qualquer conclusão
+                itemClass = 'dash-item completed'; 
                 
-                if (count >= 2) {
-                    // DUPLA INTERAÇÃO: Verde mais escuro + 2 Checks
-                    itemClass = 'dash-item completed-double';
-                    statusIcon = `<small>${checkSVG}${checkSVG} Feito (${count}x)</small>`;
-                } else {
-                    // INTERAÇÃO ÚNICA: Verde padrão + 1 Check
-                    itemClass = 'dash-item completed';
-                    statusIcon = `<small>${checkSVG} Feito</small>`;
-                }
+                // Ícone de Check Simples e Limpo
+                const checkSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+                statusIcon = `<small>${checkSVG} Feito</small>`;
             }
 
+            // 3. Lógica do Badge (Prioridade 3: Gamificação)
+            let badgeHTML = '';
+            if (count > 0) {
+                let badgeClass = 'interaction-badge';
+                
+                // Gamificação: Cores por Intensidade
+                if (count >= 10) {
+                    badgeClass += ' purple'; // Mestre (Roxo)
+                } else if (count >= 5) {
+                    badgeClass += ' gold';   // Expert (Dourado)
+                }
+                // < 5 usa a cor padrão (Azul)
+
+                // Injeção do HTML com classe e animação implícita via CSS
+                badgeHTML = `<div class="${badgeClass}" title="${count} interações hoje">${count}</div>`;
+            }
+
+            // Retorno do HTML montado
             return `
             <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})">
                 <strong>${v.ref}</strong>
                 ${statusIcon}
+                ${badgeHTML} <!-- Injeção do Badge -->
             </div>
             `;
         }).join('');
