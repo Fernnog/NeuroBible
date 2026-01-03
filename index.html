@@ -88,21 +88,27 @@
         
         <div class="top-controls">
             <div class="version-pill" onclick="window.openChangelog()" title="Ver novidades">
-                <span id="currentVersion">v1.2.6</span>
+                <span id="currentVersion">v1.2.9</span>
             </div>
 
             <div class="separator"></div>
 
             <div class="pacing-wrapper">
+                
+                <!-- NOVO: Indicador de Nível (Gamificação v1.2.9) -->
+                <div id="levelBadge" class="level-badge" title="Nível Atual (Semente)">
+                    🌱
+                </div>
+                <!-- FIM DO NOVO BADGE -->
+
                 <div id="activePlanIcon" class="plan-indicator"></div>
                 
-                <!-- NOVO: Badge de Atraso (Relógio) -->
+                <!-- Badge de Atraso (Relógio) -->
                 <div id="delayBadge" class="delay-badge" style="display: none;" title="Dias de atraso acumulado">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span id="delayCount">0d</span>
                 </div>
-                <!-- FIM DO NOVO BADGE -->
-
+                
                 <button id="btnPacing" class="btn-icon pacing-btn" onclick="window.openPlanModal()" title="Gerenciar Ritmo">
                     <div class="icon-inner">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
