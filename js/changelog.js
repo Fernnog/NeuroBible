@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.2.8",
+        date: "2026-01-03",
+        title: "Precisão de Métricas & Ciclo Real",
+        changes: [
+            "🎯 <b>Contagem Justa:</b> O contador de interações agora é rigoroso. Apenas o clique final em 'Fácil/Acertei' incrementa o número de repetições no painel.",
+            "🚫 <b>Fim da Inflação:</b> Visualizar dicas, mnemônicas, iniciais ou explicações não conta mais como 'estudo completo' nas estatísticas.",
+            "📉 <b>Reset Transparente:</b> Marcar 'Difícil/Errei' atualiza a data (removendo o item dos atrasados), mas mantém o contador de sucessos estagnado, refletindo a realidade do reforço necessário."
+        ]
+    },
+    {
         version: "1.2.7",
         date: "2026-01-02",
         title: "Contador de Interações & Clean UI",
