@@ -94,21 +94,20 @@
             <div class="separator"></div>
 
             <div class="pacing-wrapper">
-                
-                <!-- NOVO: Indicador de Nível (Gamificação v1.2.9) -->
-                <div id="levelBadge" class="level-badge" title="Nível Atual (Semente)">
-                    🌱
+                <!-- NOVO: Pílula de Nível (Visualização de Progresso) -->
+                <div id="levelBadge" class="level-pill" onclick="window.openAuthModal()" title="Ver progresso detalhado">
+                    <span id="lvlIcon">🌱</span>
+                    <span id="lvlName" class="level-name-hide-mobile">Semente</span>
                 </div>
-                <!-- FIM DO NOVO BADGE -->
+                <!-- FIM NOVO -->
 
                 <div id="activePlanIcon" class="plan-indicator"></div>
                 
-                <!-- Badge de Atraso (Relógio) -->
                 <div id="delayBadge" class="delay-badge" style="display: none;" title="Dias de atraso acumulado">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span id="delayCount">0d</span>
                 </div>
-                
+
                 <button id="btnPacing" class="btn-icon pacing-btn" onclick="window.openPlanModal()" title="Gerenciar Ritmo">
                     <div class="icon-inner">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -420,6 +419,20 @@
                     <span class="profile-label">Conectado como:</span>
                     <h3 id="userEmailDisplay" class="profile-email">...</h3>
                     <div class="profile-badge">Membro NeuroBible</div>
+                    
+                    <!-- NOVO: Barra de Progresso XP -->
+                    <div class="xp-container" style="margin-top: 15px; width: 100%;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px; color:var(--white); opacity:0.8;">
+                            <span id="xpCurrentDisplay">0 XP</span>
+                            <span id="xpNextDisplay">Próx: 250 XP</span>
+                        </div>
+                        <div class="xp-bar-bg">
+                            <div id="xpBarFill" class="xp-bar-fill" style="width: 0%"></div>
+                        </div>
+                        <small style="display:block; text-align:center; margin-top:5px; font-size:0.75rem; opacity:0.6;">Mantenha o fogo aceso para ganhar XP!</small>
+                    </div>
+                    <!-- FIM XP -->
+                    
                 </div>
             </div>
             <button class="btn-logout-styled" onclick="window.handleLogout()">
