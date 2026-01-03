@@ -183,21 +183,31 @@ header {
     font-weight: bold; padding: 5px 12px; border-radius: 20px;
     font-size: 0.9rem;
 }
+
+/* --- ATUALIZADO: Ajuste na Lista para Badges --- */
 .dash-list {
     display: flex; flex-direction: column; gap: 8px;
+    padding-right: 5px; /* Evita corte do badge */
 }
+
+/* --- ATUALIZADO: Item do Dashboard (Suporte a Badge) --- */
 .dash-item {
     background: var(--white); border: 1px solid var(--border);
     padding: 12px; border-radius: 8px;
     display: flex; justify-content: space-between; align-items: center;
     cursor: pointer; transition: 0.2s; color: var(--text);
+    
+    /* MODIFICAÇÃO PARA O BADGE */
+    position: relative; 
+    overflow: visible; 
 }
+
 .dash-item:hover {
     border-color: var(--accent); transform: translateX(5px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-/* NOVO: Estilo para item concluído (Prioridade 1 - Check Simples) */
+/* Estilo para item concluído (Check Simples - Limpo) */
 .dash-item.completed {
     border-color: #2ecc71;
     background-color: #f0fdf4; /* Verde bem claro */
@@ -211,20 +221,50 @@ header {
     gap: 4px;
 }
 
-/* NOVO: Estilo para Dupla Interação (Check Duplo - Nível de Excelência) */
-.dash-item.completed-double {
-    background-color: #dcfce7; /* Verde um pouco mais saturado que o f0fdf4 */
-    border-color: #27ae60;      /* Verde mais escuro que o 2ecc71 */
-    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
-}
-.dash-item.completed-double small {
-    color: #1e8449 !important; /* Texto mais escuro para contraste */
+/* --- NOVO: BADGE DE INTERAÇÃO (CONTADOR) --- */
+.interaction-badge {
+    position: absolute;
+    top: 50%;
+    right: -10px; /* Metade para fora */
+    transform: translateY(-50%);
+    
+    background-color: var(--accent); /* Azul Padrão */
+    color: var(--white);
+    
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 12px;
+    
+    font-size: 0.75rem;
     font-weight: bold;
+    
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    
+    border: 2px solid var(--white);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    z-index: 10;
+    
+    /* Prioridade 2: Animação de Pulso ao surgir */
+    animation: badgePulse 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* Prioridade 3: Cores de Gamificação */
+.interaction-badge.gold {
+    background-color: #f1c40f; /* Ouro (Intensidade Média) */
+    border-color: #fff;
+}
+.interaction-badge.purple {
+    background-color: #9b59b6; /* Roxo (Mestre) */
+    border-color: #fff;
+}
+
+@keyframes badgePulse {
+    0% { transform: translateY(-50%) scale(0); opacity: 0; }
+    100% { transform: translateY(-50%) scale(1); opacity: 1; }
+}
 
 .dash-empty-state {
     text-align: center;
@@ -1030,6 +1070,9 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
     }
     
     .search-wrapper input:focus { width: 120px; }
+
+    /* Ajuste Mobile para Badge */
+    .dash-list { padding-right: 15px; }
 }
 
 .toast-undo-btn {
