@@ -172,7 +172,13 @@ window.onload = function() {
     initChangelog();
     loadFromStorage();
     
-    // C. Sanity Check e Correção
+    // [NOVO v1.3.0] DETECÇÃO DE NOVO DIA (Antes de atualizar o estado)
+    // Captura o estado atual para comparar se houve virada de dia desde o último acesso
+    const todayISO = getLocalDateISO(new Date());
+    const previousLoginDate = appData.stats ? appData.stats.lastLogin : null;
+    const isNewDay = previousLoginDate && previousLoginDate !== todayISO;
+
+    // C. Sanity Check e Correção (Inclui Limpeza Diária de Contadores)
     const dataWasFixed = runSanityCheck();
     if (dataWasFixed) {
         saveToStorage(); 
@@ -189,7 +195,7 @@ window.onload = function() {
     if(refInput) refInput.addEventListener('input', uiDashboard.updatePreviewPanel);
 
     // Renderização Inicial
-    uiDashboard.checkStreak(); // Também atualiza XP/Nível
+    uiDashboard.checkStreak(); // CUIDADO: Esta função ATUALIZA appData.stats.lastLogin para hoje
     uiDashboard.updateTable();
     uiDashboard.updateRadar();
     uiDashboard.updatePacingUI();
@@ -209,6 +215,15 @@ window.onload = function() {
     setTimeout(() => {
         if(splash) splash.classList.add('hidden');
         setTimeout(() => { if(splash) splash.style.display = 'none'; }, 600);
+        
+        // [NOVO v1.3.0] FEEDBACK DE NOVO DIA
+        // Exibe o Toast somente após o Splash sumir para garantir visibilidade
+        if (isNewDay) {
+            setTimeout(() => {
+                if(window.showToast) window.showToast("☀️ Novo dia iniciado! Contadores diários resetados.", "info");
+            }, 800);
+        }
+
     }, 1500);
     
     // F. Sync Inicial com Firebase & Fila Offline
