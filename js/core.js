@@ -1,4 +1,5 @@
 // js/core.js
+import { getLocalDateISO } from './utils.js'; // [NOVO v1.3.0] Necessário para verificar a data atual
 
 // --- 1. ESTADO GLOBAL (MODEL) ---
 export let appData = {
@@ -60,11 +61,14 @@ export function restoreVerseToState(index, item) {
     appData.verses.splice(index, 0, item);
 }
 
-// --- 4. SANITY CHECK (Validação de Dados) ---
+// --- 4. SANITY CHECK (Validação e Limpeza de Dados) ---
 // Retorna true se houve alteração nos dados (sinalizando necessidade de salvar)
 export function runSanityCheck() {
     let dataChanged = false;
     if (!appData.verses) appData.verses = [];
+
+    // [NOVO v1.3.0] Captura a data de hoje para limpeza de contadores
+    const todayISO = getLocalDateISO(new Date());
 
     appData.verses.forEach(v => {
         // Migração v1.1.4: Garante lastInteraction
@@ -80,6 +84,16 @@ export function runSanityCheck() {
         // Migração Double Check: Garante contador de interação
         if (!v.hasOwnProperty('interactionCount')) {
             v.interactionCount = 0;
+            dataChanged = true;
+        }
+
+        // [NOVO v1.3.0] DAILY CLEANUP LOGIC
+        // Se a última interação não foi hoje, o contador diário deve ser RESETADO no banco de dados.
+        // Isso remove a necessidade de lógica visual no frontend para esconder dados antigos.
+        if (v.lastInteraction && v.lastInteraction !== todayISO && v.interactionCount > 0) {
+            v.interactionCount = 0;
+            // Nota: Mantemos o lastInteraction como está para cálculo de atraso,
+            // apenas limpamos a contagem de repetições do dia novo.
             dataChanged = true;
         }
     });
@@ -108,7 +122,7 @@ export function runSanityCheck() {
     }
 
     if (dataChanged) {
-        console.log('[System] Migração de dados (Sanity Check) realizada.');
+        console.log('[System] Migração de dados e Limpeza Diária (Sanity Check) realizadas.');
     }
     
     return dataChanged; // O main.js decidirá se salva
