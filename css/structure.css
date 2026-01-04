@@ -1,0 +1,283 @@
+/* =========================================
+   1. VARIÁVEIS & TEMA (ROOT)
+   ========================================= */
+:root {
+    --primary: #2c3e50;
+    --accent: #3498db;
+    --bg: #f4f7f6;
+    --white: #ffffff;
+    --text: #333333;
+    --border: #e0e0e0;
+    --hover-bg: #f8f9fa;
+    
+    --success-bg: #d4edda; --success-text: #155724;
+    --warning-bg: #fff3cd; --warning-text: #856404;
+    --danger-bg: #f8d7da; --danger-text: #721c24;
+}
+
+/* Dark Mode Automático */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary: #ecf0f1;
+        --accent: #3498db;
+        --bg: #1a1a1a;
+        --white: #2c2c2c;
+        --text: #ecf0f1;
+        --border: #444;
+        --hover-bg: #3a3a3a;
+        
+        --success-bg: #1e4620; --success-text: #d4edda;
+        --warning-bg: #4d3e04; --warning-text: #fff3cd;
+        --danger-bg: #5a1a1a; --danger-text: #f8d7da;
+    }
+}
+
+/* =========================================
+   2. RESET & LAYOUT BASE
+   ========================================= */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: var(--white);
+    width: 100%;
+    max-width: 700px;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+/* =========================================
+   3. HEADER & CONTROLS LAYOUT
+   ========================================= */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+}
+
+.brand-area {
+    display: flex;
+    align-items: center;
+    gap: 15px; 
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-area h1 { margin: 0; font-size: 1.5rem; color: var(--primary); line-height: 1.1; }
+.brand-area small { color: var(--accent); font-weight: 500; font-size: 0.85rem; }
+
+.top-controls { display: flex; gap: 10px; align-items: center; }
+
+.separator {
+    width: 1px; height: 24px; background-color: var(--border); margin: 0 5px;
+}
+
+/* =========================================
+   4. CONTAINERS DE SEÇÃO (Input, History, Dashboard)
+   ========================================= */
+.dashboard-panel {
+    background: linear-gradient(135deg, var(--white) 0%, var(--hover-bg) 100%);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
+    display: block; 
+    animation: fadeIn 0.5s ease;
+}
+
+.input-section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 25px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.input-header {
+    padding: 15px 20px;
+    background: var(--white);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+    transition: background 0.2s;
+}
+
+.input-header:hover { background: var(--hover-bg); }
+.input-header h4 { margin: 0; color: var(--primary); font-size: 1rem; display: flex; align-items: center; }
+
+.input-body {
+    padding: 20px;
+    background: var(--white);
+    animation: fadeInBody 0.3s ease;
+}
+
+/* Comportamento Accordion */
+.input-section.collapsed .input-body { display: none; }
+.input-section:not(.collapsed) .input-header {
+    border-bottom: 1px solid var(--border);
+    background: var(--hover-bg);
+}
+
+.history-section {
+    margin-top: 30px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden; 
+    transition: box-shadow 0.3s ease;
+}
+
+.history-header {
+    padding: 15px 20px;
+    background: var(--hover-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer; 
+    user-select: none;
+    border-bottom: 1px solid transparent; 
+    transition: background 0.2s;
+}
+.history-header:hover { background: #eaeaea; }
+.header-controls { display: flex; gap: 10px; align-items: center; }
+
+.history-body { 
+    padding: 15px; 
+    animation: fadeInBody 0.3s ease;
+    background: var(--white);
+}
+
+/* Comportamento Accordion Histórico */
+.history-section.collapsed .history-body { display: none; }
+.history-section.collapsed .history-header { border-bottom-color: transparent; }
+.history-section:not(.collapsed) .history-header { border-bottom: 1px solid var(--border); }
+
+/* =========================================
+   5. FORMULÁRIOS & INPUTS
+   ========================================= */
+.form-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;
+}
+.form-group.full-width { grid-column: span 2; }
+
+label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text); opacity: 0.8; font-size: 0.9rem; }
+
+input, textarea {
+    width: 100%; padding: 12px;
+    border: 1px solid var(--border);
+    background: var(--white); color: var(--text);
+    border-radius: 6px; box-sizing: border-box; font-size: 1rem;
+    transition: border 0.2s;
+}
+input:focus, textarea:focus { border-color: var(--accent); outline: none; }
+textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+
+.search-wrapper input {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    width: 100px;
+    transition: width 0.3s, border-color 0.3s;
+    background: var(--white);
+    color: var(--text);
+}
+.search-wrapper input:focus { 
+    width: 160px;
+    border-color: var(--accent); 
+    outline: none;
+}
+
+.auth-form-wrapper { display: flex; flex-direction: column; gap: 15px; }
+.auth-form-wrapper input { border: 2px solid var(--border); padding: 12px 15px; border-radius: 8px; }
+.auth-form-wrapper input:focus { border-color: var(--accent); }
+
+/* =========================================
+   6. TABELAS & LISTAS ESTRUTURAIS
+   ========================================= */
+.table-scroll-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    scrollbar-width: thin; 
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th { text-align: left; background: var(--hover-bg); padding: 10px; border-bottom: 2px solid var(--border); color: var(--text); position: sticky; top: 0; z-index: 10; }
+td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+
+.dash-list {
+    display: flex; flex-direction: column; gap: 8px;
+    padding-right: 5px; 
+}
+
+/* =========================================
+   7. GRIDS ESPECÍFICOS (Radar & Calendar)
+   ========================================= */
+.radar-panel-embedded {
+    background: var(--hover-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 15px;
+}
+.radar-header {
+    display: flex; justify-content: space-between; margin-bottom: 10px;
+    font-size: 0.9rem; color: var(--text); opacity: 0.8;
+}
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); 
+    gap: 6px;
+}
+
+/* =========================================
+   8. RESPONSIVIDADE (MEDIA QUERIES)
+   ========================================= */
+@media (max-width: 600px) {
+    body { padding: 10px; } 
+    .container { 
+        padding: 15px; 
+        width: 100%; 
+        box-sizing: border-box; 
+    }
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .top-controls {
+        width: 100%;
+        justify-content: space-between; 
+    }
+    .form-grid {
+        grid-template-columns: 1fr; 
+        gap: 10px;
+    }
+    .search-wrapper input:focus { width: 120px; }
+    
+    .pacing-wrapper {
+        margin-left: 0; 
+    }
+}
