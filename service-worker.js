@@ -1,14 +1,17 @@
-// service-worker.js - V1.2.6-FIX-ATRASO (Correção de Lógica de Atraso e Cache)
+// service-worker.js - V1.3.0 (CSS Split & Refatoração)
 
-const CACHE_NAME = 'neurobible-v1.2.6-FIX-ATRASO'; // NOME ALTERADO PARA FORÇAR UPDATE
+const CACHE_NAME = 'neurobible-v1.3.0-CSS-SPLIT';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
-    './style.css',
+    // Arquivos de Estilo (Nova Estrutura)
+    './css/structure.css',
+    './css/components.css',
+    // Assets Estáticos
     './manifest.json',
     './images/logo.png',
     './images/favicon.ico',
-    // Novos caminhos da arquitetura modular
+    // Arquivos da Arquitetura Modular
     './js/main.js',
     './js/core.js',
     './js/storage.js',
@@ -24,7 +27,7 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('[Service Worker] Caching modular assets');
+                console.log('[Service Worker] Caching modular assets (v1.3.0)');
                 return cache.addAll(ASSETS_TO_CACHE);
             })
     );
