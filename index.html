@@ -8,7 +8,7 @@
     
     <link rel="stylesheet" href="style.css">
     
-    <!-- Estilos Adicionais para v1.1.6 (Podem ir para style.css depois) -->
+    <!-- Estilos Adicionais para v1.2.9 (Podem ir para style.css depois) -->
     <style>
         /* Cross-fade Animation Classes */
         .card-content-hidden {
@@ -51,6 +51,68 @@
             background: rgba(52, 152, 219, 0.1);
             border-radius: 4px;
         }
+
+        /* ESTILOS GAMIFICATION v1.2.9 */
+        /* Pílula Minimalista do Topo */
+        .level-pill {
+            position: absolute;
+            right: 100%; /* Fica à esquerda do botão de ritmo */
+            top: 50%;
+            transform: translateY(-50%);
+            margin-right: 10px;
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--white);
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            z-index: 5;
+        }
+        .level-pill:hover {
+            border-color: var(--accent);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .level-pill.levelup {
+            animation: levelUpPulse 1.5s infinite;
+            border-color: #f1c40f;
+        }
+
+        @keyframes levelUpPulse {
+            0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
+        }
+
+        /* Barra de XP e Legenda */
+        .xp-bar-bg {
+            width: 100%; height: 10px;
+            background-color: var(--hover-bg);
+            border-radius: 5px; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #9b59b6);
+            border-radius: 5px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .level-legend-box {
+            background: var(--hover-bg);
+            border-radius: 8px; padding: 15px;
+            border: 1px solid var(--border);
+        }
+        .legend-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .legend-item {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.9rem; color: var(--text); padding: 6px;
+            border-radius: 4px; background: var(--white);
+            border: 1px solid transparent;
+        }
+        .l-icon { font-size: 1.1rem; }
+        .legend-item small { color: var(--accent); margin-left: auto; font-weight: bold; }
     </style>
 
     <link rel="manifest" href="manifest.json">
@@ -71,6 +133,7 @@
         <div class="loading-bar">
             <div class="loading-fill"></div>
         </div>
+        <small id="splashVersion" class="splash-version">v1.2.9</small>
     </div>
 </div>
 
@@ -94,15 +157,14 @@
             <div class="separator"></div>
 
             <div class="pacing-wrapper">
-                <!-- NOVO: Pílula de Nível (Visualização de Progresso) -->
-                <div id="levelBadge" class="level-pill" onclick="window.openAuthModal()" title="Ver progresso detalhado">
+                <!-- V1.2.9: Badge de Gamificação Minimalista (Abre Modal de Jornada) -->
+                <div id="levelBadge" class="level-pill" onclick="window.openGamificationModal()" title="Ver minha jornada">
                     <span id="lvlIcon">🌱</span>
-                    <span id="lvlName" class="level-name-hide-mobile">Semente</span>
                 </div>
-                <!-- FIM NOVO -->
 
                 <div id="activePlanIcon" class="plan-indicator"></div>
                 
+                <!-- Badge de Atraso (Relógio) -->
                 <div id="delayBadge" class="delay-badge" style="display: none;" title="Dias de atraso acumulado">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span id="delayCount">0d</span>
@@ -324,7 +386,7 @@
                         <h2 id="cardRefBack">...</h2>
                         <p id="cardFullText">...</p>
                         
-                        <!-- NOVA ÁREA DE ÁUDIO v1.2.2 -->
+                        <!-- ÁREA DE ÁUDIO -->
                         <div class="audio-controls-wrapper">
                             <button id="btnAudioToggle" class="btn-audio" onclick="event.stopPropagation(); window.toggleAudio()" title="Ouvir Versículo">
                                 <span id="iconContainer" style="display: flex; align-items: center;">
@@ -397,6 +459,42 @@
     </div>
 </div>
 
+<!-- NOVO MODAL DE GAMIFICAÇÃO v1.2.9 -->
+<div id="gamificationModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header-styled">
+            <h3>Sua Jornada</h3>
+            <button class="close-modal-styled" onclick="window.closeGamificationModal()">×</button>
+        </div>
+
+        <!-- Barra de Progresso (Movida para cá) -->
+        <div class="xp-container" style="margin-bottom: 25px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:8px; font-weight:bold; color:var(--primary);">
+                <span id="xpCurrentDisplay">0 XP</span>
+                <span id="xpNextDisplay">Próx: 250 XP</span>
+            </div>
+            <div class="xp-bar-bg">
+                <div id="xpBarFill" class="xp-bar-fill" style="width: 0%"></div>
+            </div>
+            <small style="display:block; text-align:center; margin-top:8px; color:var(--text); opacity:0.7;">
+                Mantenha o streak para evoluir. Se o fogo apagar, o XP zera.
+            </small>
+        </div>
+
+        <!-- Legenda de Níveis -->
+        <div class="level-legend-box">
+            <h4>Próximos Passos</h4>
+            <div class="legend-grid">
+                <div class="legend-item"><span class="l-icon">🌱</span> <span>Semente <small>(0 XP)</small></span></div>
+                <div class="legend-item"><span class="l-icon">🌿</span> <span>Raízes <small>(250 XP)</small></span></div>
+                <div class="legend-item"><span class="l-icon">🌳</span> <span>Tronco <small>(500 XP)</small></span></div>
+                <div class="legend-item"><span class="l-icon">🍎</span> <span>Frutífera <small>(1000 XP)</small></span></div>
+                <div class="legend-item"><span class="l-icon">📜</span> <span>Bereano <small>(1500 XP)</small></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="authModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div class="modal-header-styled">
@@ -419,20 +517,7 @@
                     <span class="profile-label">Conectado como:</span>
                     <h3 id="userEmailDisplay" class="profile-email">...</h3>
                     <div class="profile-badge">Membro NeuroBible</div>
-                    
-                    <!-- NOVO: Barra de Progresso XP -->
-                    <div class="xp-container" style="margin-top: 15px; width: 100%;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px; color:var(--white); opacity:0.8;">
-                            <span id="xpCurrentDisplay">0 XP</span>
-                            <span id="xpNextDisplay">Próx: 250 XP</span>
-                        </div>
-                        <div class="xp-bar-bg">
-                            <div id="xpBarFill" class="xp-bar-fill" style="width: 0%"></div>
-                        </div>
-                        <small style="display:block; text-align:center; margin-top:5px; font-size:0.75rem; opacity:0.6;">Mantenha o fogo aceso para ganhar XP!</small>
-                    </div>
-                    <!-- FIM XP -->
-                    
+                    <!-- XP BAR REMOVIDA DAQUI (Agora está no GamificationModal) -->
                 </div>
             </div>
             <button class="btn-logout-styled" onclick="window.handleLogout()">
