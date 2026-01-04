@@ -797,6 +797,7 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
     position: relative;
     display: inline-flex; 
     justify-content: center;
+    margin-left: 45px; /* FIX v1.2.9: Espaço para o ícone de semente no Desktop */
 }
 
 .pacing-btn {
@@ -980,6 +981,10 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
         margin: auto;
     }
     .search-wrapper input:focus { width: 120px; }
+    
+    .pacing-wrapper {
+        margin-left: 0; /* Reset do espaçamento no mobile */
+    }
 }
 
 /* --- MNEMONIC STYLES --- */
