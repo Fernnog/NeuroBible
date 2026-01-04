@@ -5,7 +5,6 @@ import {
     isExplanationActive, setIsExplanationActive 
 } from './core.js';
 import { saveToStorage } from './storage.js';
-// ATUALIZADO v1.2.9: Importando getLevelInfo
 import { getAcronym, generateClozeText, getLocalDateISO, showToast, getLevelInfo } from './utils.js';
 import { renderDashboard, updateRadar } from './ui-dashboard.js';
 import { calculateSRSDates, findNextLightDay } from './srs-engine.js';
@@ -299,80 +298,87 @@ export function registerInteraction(verse, autoSave = true, isSuccess = false) {
     // Verifica se estava atrasado (para Toast de recuperação)
     const wasOverdue = verse.dates.some(d => d < todayISO) && verse.lastInteraction !== todayISO;
 
-    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO (Lógica Condicional) ---
+    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO ---
     let dataUpdated = false;
 
     if (verse.lastInteraction !== todayISO) {
-        // Primeira vez no dia (ou dia diferente)
-        // Atualiza a data para registrar que o usuário "viu" o cartão hoje
+        // Primeira vez no dia
         verse.lastInteraction = todayISO;
-        
-        // Se for sucesso (Easy), inicia contagem. Se for erro (Hard), inicia/mantém zero.
         verse.interactionCount = isSuccess ? 1 : 0;
-        
         dataUpdated = true;
         
-        // Feedback de recuperação
         if (wasOverdue) {
             showToast("🚀 Progresso registrado! Item recuperado.", "success");
         }
     } else {
         // Já interagiu hoje:
-        // Só incrementa o contador se for SUCESSO (Easy/Acertei)
         if (isSuccess) {
             verse.interactionCount = (verse.interactionCount || 0) + 1;
-            
-            // ATUALIZADO v1.2.9: Lógica de XP e Level Up (Gamificação)
-            if (typeof appData.stats.currentXP === 'undefined') appData.stats.currentXP = 0;
-            
-            const oldLevel = getLevelInfo(appData.stats.currentXP).title;
-            appData.stats.currentXP++; // +1 XP por acerto
-            const newLevelInfo = getLevelInfo(appData.stats.currentXP);
-            
             dataUpdated = true;
-            
-            // Feedback Inteligente de Nível
-            if (newLevelInfo.title !== oldLevel) {
-                showToast(`🎉 LEVEL UP! Você agora é: ${newLevelInfo.title}`, "success");
-                const badge = document.getElementById('levelBadge');
-                if(badge) {
-                    badge.classList.remove('level-up-anim');
-                    void badge.offsetWidth; // Trigger reflow
-                    badge.classList.add('level-up-anim');
-                }
-            } else {
-                // Feedback discreto para interação extra
-                if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x) | +1 XP`, "success");
-            }
+            // Feedback discreto para interação extra
+            if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x)`, "success");
         }
-        // Se for falha (Hard), não incrementamos o contador, mas o item continua "visitado" no dia.
     }
 
-    // Persistência na Nuvem (Dispara se houve alteração)
+    // --- BLOCO 1.5: GAMIFICAÇÃO & PERSISTÊNCIA ROBUSTA (v1.2.9) ---
+    if (isSuccess) {
+        // Garante que o objeto stats existe e tem XP
+        if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO, currentXP: 0 };
+        if (typeof appData.stats.currentXP === 'undefined') appData.stats.currentXP = 0;
+        
+        // Pega nível antigo
+        const oldLevelInfo = getLevelInfo(appData.stats.currentXP);
+        
+        // Incrementa XP
+        appData.stats.currentXP++;
+        
+        // Pega nível novo
+        const newLevelInfo = getLevelInfo(appData.stats.currentXP);
+        
+        // SALVAMENTO IMEDIATO NA NUVEM (Correção de Persistência)
+        if (window.saveStatsToFirestore) {
+            window.saveStatsToFirestore(appData.stats);
+        }
+
+        // Feedback de Level Up
+        if (newLevelInfo.title !== oldLevelInfo.title) {
+            showToast(`🎉 LEVEL UP! Agora você é: ${newLevelInfo.title}`, "success");
+            
+            // Animação na pílula do topo
+            const badge = document.getElementById('levelBadge');
+            if(badge) {
+                badge.classList.remove('levelup');
+                void badge.offsetWidth; // trigger reflow
+                badge.classList.add('levelup');
+            }
+        } else if (appData.stats.currentXP % 5 === 0) {
+            // Feedback de progresso a cada 5 pontos
+            if(window.showToast) showToast(`+1 XP (${appData.stats.currentXP})`, "success");
+        }
+    }
+
+    // Persistência na Nuvem do Versículo
     if (dataUpdated && autoSave && window.saveVerseToFirestore) {
-        // Passando 'Interaction_Register' como source
         window.saveVerseToFirestore(verse, false, 'Interaction_Register');
     }
 
-    // --- BLOCO 2: ATUALIZAÇÃO DO STREAK (Sempre Executa na Interação) ---
+    // --- BLOCO 2: ATUALIZAÇÃO DO STREAK (Sempre Executa) ---
     
-    if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
+    if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO, currentXP: 0 };
     
     let statsChanged = false;
 
-    // Cenário A: Streak Zerado/Inválido -> Força Ignição (1)
     if (!appData.stats.streak || appData.stats.streak <= 0) {
         appData.stats.streak = 1;
         appData.stats.lastLogin = todayISO;
         statsChanged = true;
     } 
-    // Cenário B: Já tem Streak, só garante lastLogin hoje
     else if (appData.stats.lastLogin !== todayISO) {
         appData.stats.lastLogin = todayISO;
         statsChanged = true;
     }
 
-    // Persistência Global
+    // Persistência Global Local
     saveToStorage();
     
     if (statsChanged) {
@@ -381,7 +387,7 @@ export function registerInteraction(verse, autoSave = true, isSuccess = false) {
         }
     }
     
-    // Renderiza Dashboard (Atualiza checks verdes, duplos e Nível)
+    // Renderiza Dashboard
     renderDashboard(); 
 }
 
@@ -393,11 +399,11 @@ export function handleDifficulty(level) {
     if (verseIndex === -1) return;
     const verse = appData.verses[verseIndex];
 
-    // [MODIFICADO] Determina se é sucesso para incrementar contador
+    // [MODIFICADO] Determina se é sucesso para incrementar contador e XP
     const isSuccess = (level === 'easy');
 
     // PASSO 1: Registra interação (false = não salva no banco imediatamente)
-    // Passamos o isSuccess para controlar o incremento do contador
+    // Passamos o isSuccess para controlar o incremento do contador e XP
     registerInteraction(verse, false, isSuccess);
 
     // PASSO 2: Aplica lógica de datas
@@ -431,10 +437,9 @@ export function handleDifficulty(level) {
         showToast('Ótimo! Segue o plano.', 'success');
     }
 
-    // PASSO 3: PERSISTÊNCIA CONSOLIDADA (COM LOGS E SOURCE)
+    // PASSO 3: PERSISTÊNCIA CONSOLIDADA
     saveToStorage(); // Salva localmente
     if (window.saveVerseToFirestore) {
-        // console.log(`[LOGIC_TRACE] Salvando após feedback '${level}'. Count: ${verse.interactionCount}`);
         window.saveVerseToFirestore(verse, false, `Difficulty_${level}`); 
     }
     
