@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.3.0",
+        date: "2026-01-04",
+        title: "Performance & Organização",
+        changes: [
+            "🧹 <b>Limpeza Diária Real:</b> O sistema agora reseta fisicamente os contadores de interação ao iniciar um novo dia, garantindo integridade total dos dados.",
+            "🎨 <b>Refatoração CSS:</b> Divisão da folha de estilos em módulos de Estrutura e Componentes para carregamento mais eficiente.",
+            "☀️ <b>Boas-vindas:</b> Feedback visual automático ao iniciar a jornada de estudos em um novo dia."
+        ]
+    },
+    {
         version: "1.2.9",
         date: "2026-01-04",
         title: "Refinamento Visual & Lógica Diária",
