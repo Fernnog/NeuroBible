@@ -5,7 +5,7 @@ import {
 } from './core.js';
 import { saveToStorage } from './storage.js';
 import { calculateSRSDates, generateICSFile, findNextLightDay } from './srs-engine.js';
-import { getLocalDateISO, showToast, getLevelInfo } from './utils.js';
+import { getLocalDateISO, showToast, getLevelInfo } from './utils.js'; // IMPORTANTE: getLevelInfo Adicionado
 import { startFlashcardFromDash } from './flashcard.js';
 
 // --- LOGICA DO NOVO ACCORDION (INPUT SECTION) ---
@@ -539,6 +539,7 @@ function getCurrentLoadMap() {
 
 // --- HELPERS DE MODAL E SETTINGS ---
 
+// ATUALIZADO: Lógica "Hardcore" - Se quebrar streak, zera XP
 export function checkStreak() {
     const today = getLocalDateISO(new Date());
     if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
@@ -551,54 +552,52 @@ export function checkStreak() {
         const yesterdayStr = getLocalDateISO(yesterdayDate);
 
         if (lastLogin < yesterdayStr) {
-            // QUEBROU A CORRENTE (Hardcore Reset)
+            // QUEBROU A CORRENTE!
             if (appData.stats.streak > 0) {
                 showToast("Corrente quebrada. A árvore secou (XP Zerado).", "error");
             }
-            appData.stats.streak = 0; // Reinicia contagem
-            appData.stats.currentXP = 0; // Punição: Zera XP
+            appData.stats.streak = 1; // Reinicia contagem
+            appData.stats.currentXP = 0; // Punição Hardcore
         } else {
-            // Manteve a corrente (Login consecutivo)
-            // Apenas atualiza lastLogin, o streak/XP incrementa na ação do flashcard
+            // Manteve a corrente (visitou ontem), só atualiza a data
         }
         
         appData.stats.lastLogin = today;
         saveToStorage();
-        if(window.saveStatsToFirestore) window.saveStatsToFirestore(appData.stats);
+
+        if(window.saveStatsToFirestore) {
+            window.saveStatsToFirestore(appData.stats);
+        }
     }
     
-    updateLevelUI(); // Renderiza o nível atual
-    
+    // Atualiza Visual do Fogo
     const badge = document.getElementById('streakBadge');
     if(badge && appData.stats) {
-        // SVG do Fogo (Flame)
         const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
         badge.innerHTML = `${flameIcon} ${appData.stats.streak}`;
     }
+
+    // Atualiza Visual do Nível
+    updateLevelUI();
 }
 
-// 2. Nova função para Renderizar UI de Nível (v1.2.9)
+// NOVO: Renderiza a Pílula Minimalista (Topo) e a Barra de Progresso (Modal)
 export function updateLevelUI() {
-    // A. Atualiza o Badge do Topo
-    const pill = document.getElementById('levelBadge');
+    // 1. Atualiza Ícone do Topo (Minimalista)
     const iconEl = document.getElementById('lvlIcon');
-    const nameEl = document.getElementById('lvlName');
+    const pill = document.getElementById('levelBadge');
     
     if (!appData.stats) appData.stats = { currentXP: 0 };
     const currentXP = appData.stats.currentXP || 0;
     
-    // Obtém info do nível (segurança caso utils não tenha carregado)
-    const info = (typeof getLevelInfo === 'function') 
-        ? getLevelInfo(currentXP) 
-        : { icon: "🌱", title: "Semente", min: 0, next: 250 }; 
+    const info = getLevelInfo(currentXP); 
 
-    if (pill && iconEl) {
+    if (iconEl && pill) {
         iconEl.innerText = info.icon;
-        if(nameEl) nameEl.innerText = info.title;
-        pill.title = `${info.title}: ${currentXP} XP (Clique para ver detalhes)`;
+        pill.title = `${info.title}: ${currentXP} XP (Clique para ver sua jornada)`;
     }
 
-    // B. Atualiza a Barra de Progresso (Se o modal estiver aberto ou existirem os elementos)
+    // 2. Atualiza Barra de Progresso (Agora no Modal de Gamificação)
     const xpCurrentEl = document.getElementById('xpCurrentDisplay');
     const xpNextEl = document.getElementById('xpNextDisplay');
     const barFill = document.getElementById('xpBarFill');
@@ -608,13 +607,12 @@ export function updateLevelUI() {
         let range = info.next - info.min;
         
         if (info.next === Infinity) {
-            percentage = 100; // Nível Máximo
+            percentage = 100;
         } else {
             let xpInLevel = currentXP - info.min;
             percentage = Math.floor((xpInLevel / range) * 100);
         }
         
-        // Renderiza
         barFill.style.width = `${percentage}%`;
         if(xpCurrentEl) xpCurrentEl.innerText = `${currentXP} XP`;
         if(xpNextEl) xpNextEl.innerText = info.next === Infinity ? "Nível Máximo" : `Próx: ${info.next} XP`;
@@ -696,6 +694,16 @@ export function selectPlan(days) {
 export function openRadarModal() { updateRadar(); document.getElementById('radarModal').style.display = 'flex'; }
 export function closeRadarModal() { document.getElementById('radarModal').style.display = 'none'; }
 
+// NOVO: Funções de Controle do Modal de Gamificação
+export function openGamificationModal() {
+    updateLevelUI(); // Garante atualização antes de abrir
+    document.getElementById('gamificationModal').style.display = 'flex';
+}
+
+export function closeGamificationModal() {
+    document.getElementById('gamificationModal').style.display = 'none';
+}
+
 export function toggleHistory() {
     const section = document.getElementById('historySection');
     section.classList.toggle('collapsed');
@@ -724,7 +732,7 @@ export function clearData() {
     if(confirm('Limpar TUDO? (Isso resetará seus planos e streaks)')) {
         appData.verses = [];
         appData.settings = { planInterval: 1 };
-        appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
+        appData.stats = { streak: 0, lastLogin: null };
         saveToStorage();
         updateTable();
         updateRadar();
