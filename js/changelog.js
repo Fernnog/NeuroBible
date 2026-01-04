@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.2.9",
+        date: "2026-01-04",
+        title: "Refinamento Visual & Lógica Diária",
+        changes: [
+            "🔄 <b>Novo Dia, Nova Meta:</b> O contador de interações no painel 'Sua Missão' agora zera visualmente a cada amanhecer. Se a última interação não foi hoje, o indicador mostra 0, garantindo clareza sobre o esforço atual.",
+            "🖥️ <b>Layout Desktop:</b> Correção de espaçamento no cabeçalho para evitar que o ícone de Nível (Semente) sobreponha a etiqueta de versão em monitores.",
+            "✨ <b>Splash Limpo:</b> A tela de abertura foi simplificada, removendo o número da versão para destacar a marca NeuroBible."
+        ]
+    },
+    {
         version: "1.2.8",
         date: "2026-01-03",
         title: "Precisão de Métricas & Ciclo Real",
