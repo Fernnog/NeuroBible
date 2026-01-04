@@ -26,6 +26,11 @@ window.filterHistory = uiDashboard.filterHistory;
 window.openChangelog = uiDashboard.openChangelog;
 window.closeChangelog = uiDashboard.closeChangelog;
 
+// --- NOVO: GAMIFICAÇÃO & MODAIS SEPARADOS (v1.2.9) ---
+window.openGamificationModal = uiDashboard.openGamificationModal;
+window.closeGamificationModal = uiDashboard.closeGamificationModal;
+// -----------------------------------------------------
+
 // NOVA FUNÇÃO v1.2.0: Toggle do Painel de Cadastro
 window.toggleInputSection = uiDashboard.toggleInputSection;
 
@@ -113,12 +118,15 @@ window.handleCloudData = function(payload) {
             newState.settings = cloudSettings;
         }
 
-        // 3. Se vieram stats da nuvem, aplica
+        // 3. Se vieram stats da nuvem, aplica (PERSISTÊNCIA BLINDADA XP)
         if (cloudStats) {
-            // Lógica de segurança simples: confia na nuvem se local for zero ou menor
-            if (!appData.stats || cloudStats.streak > (appData.stats.streak || 0)) {
-                newState.stats = cloudStats;
-            }
+            // Mesclagem Inteligente: Prioriza a nuvem para o XP e Streak
+            newState.stats = {
+                streak: (typeof cloudStats.streak !== 'undefined') ? cloudStats.streak : (appData.stats.streak || 0),
+                lastLogin: cloudStats.lastLogin || null,
+                // CRÍTICO: Garante que o XP da nuvem seja carregado e não sobrescrito por 0 local
+                currentXP: (typeof cloudStats.currentXP !== 'undefined') ? cloudStats.currentXP : 0
+            };
         }
         
         // 4. Atualiza Estado Global na Memória
@@ -131,7 +139,7 @@ window.handleCloudData = function(payload) {
         uiDashboard.updateTable();
         uiDashboard.updateRadar();
         uiDashboard.updatePacingUI(); // Agora refletirá o Perfil correto
-        uiDashboard.checkStreak();   // Agora refletirá o Streak correto
+        uiDashboard.checkStreak();   // Agora refletirá o Streak e XP corretos
         uiDashboard.renderDashboard();
         
         // Feedback visual discreto
@@ -181,11 +189,14 @@ window.onload = function() {
     if(refInput) refInput.addEventListener('input', uiDashboard.updatePreviewPanel);
 
     // Renderização Inicial
-    uiDashboard.checkStreak();
+    uiDashboard.checkStreak(); // Também atualiza XP/Nível
     uiDashboard.updateTable();
     uiDashboard.updateRadar();
     uiDashboard.updatePacingUI();
     uiDashboard.renderDashboard();
+    
+    // --- NOVO v1.2.9: Força renderização do Ícone de Nível no topo ---
+    if(uiDashboard.updateLevelUI) uiDashboard.updateLevelUI();
 
     // E. Splash Screen
     const splash = document.getElementById('splashScreen');
