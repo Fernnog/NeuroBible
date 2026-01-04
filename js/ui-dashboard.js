@@ -194,7 +194,11 @@ export function renderDashboard() {
         // Lógica de Renderização com Badge (Prioridades 1, 2 e 3)
         list.innerHTML = todayVerses.map(v => {
             const isDone = v.lastInteraction === todayStr;
-            const count = v.interactionCount || 0;
+            
+            // [MODIFICADO] Lógica de Reset Diário Visual
+            // Se o versículo não foi feito HOJE (isDone=false), o contador visual deve ser 0.
+            // Isso ignora contadores antigos que ainda estão no banco de dados.
+            const count = isDone ? (v.interactionCount || 0) : 0;
             
             // 1. Estado Base Simplificado
             let itemClass = 'dash-item';
