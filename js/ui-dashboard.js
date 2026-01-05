@@ -5,7 +5,7 @@ import {
 } from './core.js';
 import { saveToStorage } from './storage.js';
 import { calculateSRSDates, generateICSFile, findNextLightDay } from './srs-engine.js';
-import { getLocalDateISO, showToast, getLevelInfo } from './utils.js'; // Import getLevelInfo adicionado
+import { getLocalDateISO, showToast, getLevelInfo } from './utils.js';
 import { startFlashcardFromDash } from './flashcard.js';
 
 // --- LOGICA DO ACCORDION (INPUT SECTION) ---
@@ -108,7 +108,7 @@ export function renderDashboard() {
     const todayStr = getLocalDateISO(new Date());
     const todayDateObj = new Date(todayStr + 'T00:00:00');
     
-    // 1. Lógica de Atrasados
+    // 1. Lógica de Atrasados (Com Persistência Diária e Melhoria de UX de Ordenação)
     let maxDelayDays = 0;
 
     const overdueVerses = appData.verses.filter(v => {
@@ -116,22 +116,27 @@ export function renderDashboard() {
         if (pastDates.length === 0) return false;
 
         const lastInt = v.lastInteraction || '0000-00-00';
+        
+        // Critério v1.3.1: Se há datas passadas não batidas OU se interagiu hoje vindo de um atraso
         const unmetDeadlines = pastDates.filter(scheduledDate => scheduledDate > lastInt);
+        const isRecoveredToday = (v.lastInteraction === todayStr);
 
-        if (unmetDeadlines.length > 0) {
-            const missedDateStr = unmetDeadlines[unmetDeadlines.length - 1]; 
-            const missedDateObj = new Date(missedDateStr + 'T00:00:00');
+        if (unmetDeadlines.length > 0 || isRecoveredToday) {
+            // Se já bateu hoje, vira "Recuperado", senão vira data do atraso mais antigo
+            const referenceDateStr = unmetDeadlines.length > 0 ? unmetDeadlines[0] : pastDates[pastDates.length - 1];
+            const missedDateObj = new Date(referenceDateStr + 'T00:00:00');
             const diffTime = Math.abs(todayDateObj - missedDateObj);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             if (diffDays > maxDelayDays) maxDelayDays = diffDays;
 
-            v._displayMissedDate = missedDateStr.split('-').reverse().join('/');
+            v._displayMissedDate = referenceDateStr.split('-').reverse().join('/');
             v._displayDelayDays = diffDays;
+            v._isRecoveredToday = isRecoveredToday;
             return true;
         }
         return false;
-    });
+    }).sort((a, b) => b._displayDelayDays - a._displayDelayDays); // Ordenação por maior atraso
 
     // 2. Atualiza Badge Global de Atraso
     if (delayBadge && delayCount) {
@@ -155,27 +160,40 @@ export function renderDashboard() {
         if(overdueCount) overdueCount.innerText = overdueVerses.length;
         
         const overdueIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+        const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
         const calendarIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
         if(overdueList) {
-            overdueList.innerHTML = overdueVerses.map(v => `
-                <div class="dash-item" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid #c0392b; flex-direction: column; align-items: flex-start;">
-                    <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-                        <strong>${v.ref}</strong>
-                        <small style="color:#c0392b; font-weight:bold;">-${v._displayDelayDays} dias</small>
-                    </div>
-                    
-                    <div style="display:flex; align-items:center; width:100%; margin-top:8px;">
-                        <span class="overdue-date-chip" title="Data original do agendamento">
-                            ${calendarIcon} ${v._displayMissedDate}
-                        </span>
+            overdueList.innerHTML = overdueVerses.map(v => {
+                const itemClass = v._isRecoveredToday ? 'dash-item overdue-completed' : 'dash-item';
+                const borderColor = v._isRecoveredToday ? '#27ae60' : '#c0392b';
+                
+                const statusBadge = v._isRecoveredToday ? 
+                    `<div style="display:flex; align-items:center; color:#27ae60; font-size:0.8rem; font-weight:bold;">${checkIcon} Recuperado</div>` :
+                    `<div style="display:flex; align-items:center; color:#c0392b; font-size:0.8rem; font-weight:bold;">${overdueIcon} Recuperar</div>`;
 
-                        <div style="display:flex; align-items:center; color:#c0392b; font-size:0.8rem; margin-left:auto;">
-                            ${overdueIcon} <span style="font-weight:500;">Recuperar</span>
+                const delayInfo = v._isRecoveredToday ? 
+                    `<small style="color:#27ae60; font-weight:bold;">Bônus Ativo</small>` :
+                    `<small style="color:#c0392b; font-weight:bold;">-${v._displayDelayDays} dias</small>`;
+
+                return `
+                    <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor}; flex-direction: column; align-items: flex-start;">
+                        <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                            <strong>${v.ref}</strong>
+                            ${delayInfo}
+                        </div>
+                        
+                        <div style="display:flex; align-items:center; width:100%; margin-top:8px;">
+                            <span class="overdue-date-chip" title="Data original do agendamento">
+                                ${calendarIcon} ${v._displayMissedDate}
+                            </span>
+                            <div style="margin-left:auto;">
+                                ${statusBadge}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
     } else if (overduePanel) {
         overduePanel.style.display = 'none';
@@ -511,58 +529,45 @@ function getCurrentLoadMap() {
     return map;
 }
 
-// --- STREAK & LEVEL SYSTEM (AUDITORIA BLINDADA) ---
+// --- STREAK & LEVEL SYSTEM ---
 
 export function checkStreak() {
     const today = getLocalDateISO(new Date());
     
-    // Inicialização segura
     if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
     
-    const lastInteraction = appData.stats.lastLogin; // Data da última revisão FEITA
+    const lastInteraction = appData.stats.lastLogin;
 
-    // Cenário 1: Primeira vez usando
     if (!lastInteraction) {
         updateLevelUI();
         renderStreakUI();
         return;
     }
 
-    // Calculamos "Ontem"
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
     const yesterdayStr = getLocalDateISO(yesterdayDate);
 
-    // Cenário 2: Usuário já estudou hoje
     if (lastInteraction === today) {
-        // Tudo certo. Streak já está computado.
         updateLevelUI();
         renderStreakUI();
         return;
     }
 
-    // Cenário 3: Usuário estudou ontem
     if (lastInteraction === yesterdayStr) {
-        // Tudo certo. O Streak está "vivo", mas pendente de incremento hoje.
-        // NÃO ATUALIZAMOS A DATA AQUI. Isso é crucial.
         updateLevelUI();
         renderStreakUI();
         return;
     }
 
-    // Cenário 4: Quebra de Corrente (Última vez foi antes de ontem)
     if (lastInteraction < yesterdayStr) {
-        // Infelizmente, a corrente quebrou.
         if (appData.stats.streak > 0) {
-            // Só avisa se tinha algo a perder
             if(window.showToast) showToast("Dias pulados. O Streak reiniciou.", "error");
         }
         
-        // Reset Hardcore: Zera Streak E Zera XP (Árvore Seca)
         appData.stats.streak = 0;
         appData.stats.currentXP = 0; 
         
-        // Salvamos o reset
         saveToStorage();
         if(window.saveStatsToFirestore) window.saveStatsToFirestore(appData.stats);
         
@@ -582,23 +587,19 @@ function renderStreakUI() {
 // --- LEVEL UI & GAMIFICATION MODAL ---
 
 export function updateLevelUI() {
-    // 1. Atualiza Ícone do Topo (Minimalista)
     const iconEl = document.getElementById('lvlIcon');
     
     if (!appData.stats) appData.stats = { currentXP: 0 };
     const currentXP = appData.stats.currentXP || 0;
     
-    // Helper de Utils
     const info = getLevelInfo(currentXP); 
 
     if (iconEl) {
         iconEl.innerText = info.icon;
-        // Tooltip nativo atualizado
         const pill = document.getElementById('levelBadge');
         if(pill) pill.title = `${info.title}: ${currentXP} XP (Clique para ver detalhes)`;
     }
 
-    // 2. Atualiza Barra (Agora dentro do gamificationModal)
     const xpCurrentEl = document.getElementById('xpCurrentDisplay');
     const xpNextEl = document.getElementById('xpNextDisplay');
     const barFill = document.getElementById('xpBarFill');
