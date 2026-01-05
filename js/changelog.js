@@ -2,6 +2,17 @@
 
 export const systemChangelog = [
     {
+        version: "1.3.1",
+        date: "2026-01-05",
+        title: "Reforço Ativo & Inteligência de Atrasos",
+        changes: [
+            "🧠 <b>Reforço Ativo:</b> Versículos do painel de atrasados agora permanecem visíveis durante todo o dia após a recuperação, permitindo treinos múltiplos para consolidar o que foi esquecido.",
+            "⚖️ <b>Ética na Gamificação:</b> Padronização de XP (+1) para todas as interações. Removemos incentivos que poderiam premiar o atraso, focando o bônus apenas na retenção neural.",
+            "📊 <b>Priorização por Gravidade:</b> O painel de atrasados agora organiza os versículos automaticamente, colocando no topo aqueles com maior tempo de atraso acumulado.",
+            "✅ <b>Feedback de Recuperação:</b> Implementação do selo visual 'Recuperado' e bordas verdes para itens atrasados que já receberam atenção no dia atual."
+        ]
+    },
+    {
         version: "1.3.0",
         date: "2026-01-04",
         title: "Performance & Organização",
