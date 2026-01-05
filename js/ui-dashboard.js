@@ -5,10 +5,10 @@ import {
 } from './core.js';
 import { saveToStorage } from './storage.js';
 import { calculateSRSDates, generateICSFile, findNextLightDay } from './srs-engine.js';
-import { getLocalDateISO, showToast, getLevelInfo } from './utils.js'; // IMPORTANTE: getLevelInfo Adicionado
+import { getLocalDateISO, showToast, getLevelInfo } from './utils.js'; // Import getLevelInfo adicionado
 import { startFlashcardFromDash } from './flashcard.js';
 
-// --- LOGICA DO NOVO ACCORDION (INPUT SECTION) ---
+// --- LOGICA DO ACCORDION (INPUT SECTION) ---
 export function toggleInputSection() {
     const section = document.getElementById('inputSection');
     if(section) section.classList.toggle('collapsed');
@@ -91,7 +91,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER (ATUALIZADO - BADGE CLEAN UI) ---
+// --- DASHBOARD RENDER ---
 export function renderDashboard() {
     const dash = document.getElementById('todayDashboard');
     const list = document.getElementById('todayList');
@@ -191,53 +191,32 @@ export function renderDashboard() {
              list.innerHTML = `<div class="dash-empty-state">Foque nos atrasados acima!</div>`;
         }
     } else {
-        // Lógica de Renderização com Badge (Prioridades 1, 2 e 3)
         list.innerHTML = todayVerses.map(v => {
             const isDone = v.lastInteraction === todayStr;
+            const count = v.interactionCount || 0;
             
-            // [MODIFICADO] Lógica de Reset Diário Visual
-            // Se o versículo não foi feito HOJE (isDone=false), o contador visual deve ser 0.
-            // Isso ignora contadores antigos que ainda estão no banco de dados.
-            const count = isDone ? (v.interactionCount || 0) : 0;
-            
-            // 1. Estado Base Simplificado
             let itemClass = 'dash-item';
-            
-            // 2. Definição do Ícone de Status (Apenas "Treinar" ou "Feito")
             let statusIcon = `<small style="color:var(--accent)">▶ Treinar</small>`;
 
             if (isDone) {
-                // Fundo verde claro padrão para qualquer conclusão
                 itemClass = 'dash-item completed'; 
-                
-                // Ícone de Check Simples e Limpo
                 const checkSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
                 statusIcon = `<small>${checkSVG} Feito</small>`;
             }
 
-            // 3. Lógica do Badge (Prioridade 3: Gamificação)
             let badgeHTML = '';
             if (count > 0) {
                 let badgeClass = 'interaction-badge';
-                
-                // Gamificação: Cores por Intensidade
-                if (count >= 10) {
-                    badgeClass += ' purple'; // Mestre (Roxo)
-                } else if (count >= 5) {
-                    badgeClass += ' gold';   // Expert (Dourado)
-                }
-                // < 5 usa a cor padrão (Azul)
-
-                // Injeção do HTML com classe e animação implícita via CSS
+                if (count >= 10) badgeClass += ' purple'; 
+                else if (count >= 5) badgeClass += ' gold';   
                 badgeHTML = `<div class="${badgeClass}" title="${count} interações hoje">${count}</div>`;
             }
 
-            // Retorno do HTML montado
             return `
             <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})">
                 <strong>${v.ref}</strong>
                 ${statusIcon}
-                ${badgeHTML} <!-- Injeção do Badge -->
+                ${badgeHTML}
             </div>
             `;
         }).join('');
@@ -245,7 +224,6 @@ export function renderDashboard() {
 }
 
 // --- CRUD & FORM LOGIC ---
-
 export function processAndGenerate() {
     const btn = document.getElementById('btnPacing');
     if (btn && btn.classList.contains('is-blocked')) {
@@ -264,7 +242,6 @@ export function processAndGenerate() {
         return;
     }
 
-    // Verifica congestionamento
     const reviewDates = calculateSRSDates(startDate);
     const overloadLimit = 5;
     const loadMap = getCurrentLoadMap();
@@ -308,7 +285,6 @@ function finalizeSave(ref, text, startDate, reviewDates) {
     renderDashboard();
     generateICSFile(newVerse, reviewDates);
 
-    // Limpeza
     document.getElementById('ref').value = '';
     document.getElementById('text').value = '';
     document.getElementById('mnemonic').value = '';
@@ -324,12 +300,9 @@ export function startEdit(id) {
     if(!verse) return;
 
     setEditingVerseId(id);
-
-    // FORÇA ABERTURA DO PAINEL DE INPUT
     const inputSection = document.getElementById('inputSection');
     if(inputSection) inputSection.classList.remove('collapsed');
 
-    // Popula formulário
     const formFields = ['ref', 'startDate', 'mnemonic', 'explanation', 'text'];
     formFields.forEach(fieldId => {
         const el = document.getElementById(fieldId);
@@ -364,7 +337,6 @@ export function saveEdit() {
     if (!ref || !startDate) return showToast("Dados incompletos.", "error");
 
     let dates = appData.verses[verseIndex].dates;
-    // Só recalcula SRS se a data de início mudou
     if(startDate !== appData.verses[verseIndex].startDate) {
         dates = calculateSRSDates(startDate);
     }
@@ -463,7 +435,6 @@ function showUndoToast(id) {
     if(!box) return;
     const el = document.createElement('div');
     el.className = `toast warning`;
-    // Ícone de Lixeira em SVG
     const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
     
     el.innerHTML = `${trashIcon} Item excluído. <button onclick="handleUndo()" class="toast-undo-btn">Desfazer</button>`;
@@ -473,7 +444,6 @@ function showUndoToast(id) {
 }
 
 // --- TABLE & PREVIEW UI ---
-
 export function updateTable() {
     const tbody = document.getElementById('historyTableBody');
     if(!tbody) return;
@@ -541,67 +511,94 @@ function getCurrentLoadMap() {
     return map;
 }
 
-// --- HELPERS DE MODAL E SETTINGS ---
+// --- STREAK & LEVEL SYSTEM (AUDITORIA BLINDADA) ---
 
-// ATUALIZADO: Lógica "Hardcore" - Se quebrar streak, zera XP
 export function checkStreak() {
     const today = getLocalDateISO(new Date());
+    
+    // Inicialização segura
     if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
     
-    const lastLogin = appData.stats.lastLogin;
-    
-    if (lastLogin !== today) {
-        const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        const yesterdayStr = getLocalDateISO(yesterdayDate);
+    const lastInteraction = appData.stats.lastLogin; // Data da última revisão FEITA
 
-        if (lastLogin < yesterdayStr) {
-            // QUEBROU A CORRENTE!
-            if (appData.stats.streak > 0) {
-                showToast("Corrente quebrada. A árvore secou (XP Zerado).", "error");
-            }
-            appData.stats.streak = 1; // Reinicia contagem
-            appData.stats.currentXP = 0; // Punição Hardcore
-        } else {
-            // Manteve a corrente (visitou ontem), só atualiza a data
+    // Cenário 1: Primeira vez usando
+    if (!lastInteraction) {
+        updateLevelUI();
+        renderStreakUI();
+        return;
+    }
+
+    // Calculamos "Ontem"
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = getLocalDateISO(yesterdayDate);
+
+    // Cenário 2: Usuário já estudou hoje
+    if (lastInteraction === today) {
+        // Tudo certo. Streak já está computado.
+        updateLevelUI();
+        renderStreakUI();
+        return;
+    }
+
+    // Cenário 3: Usuário estudou ontem
+    if (lastInteraction === yesterdayStr) {
+        // Tudo certo. O Streak está "vivo", mas pendente de incremento hoje.
+        // NÃO ATUALIZAMOS A DATA AQUI. Isso é crucial.
+        updateLevelUI();
+        renderStreakUI();
+        return;
+    }
+
+    // Cenário 4: Quebra de Corrente (Última vez foi antes de ontem)
+    if (lastInteraction < yesterdayStr) {
+        // Infelizmente, a corrente quebrou.
+        if (appData.stats.streak > 0) {
+            // Só avisa se tinha algo a perder
+            if(window.showToast) showToast("Dias pulados. O Streak reiniciou.", "error");
         }
         
-        appData.stats.lastLogin = today;
+        // Reset Hardcore: Zera Streak E Zera XP (Árvore Seca)
+        appData.stats.streak = 0;
+        appData.stats.currentXP = 0; 
+        
+        // Salvamos o reset
         saveToStorage();
-
-        if(window.saveStatsToFirestore) {
-            window.saveStatsToFirestore(appData.stats);
-        }
+        if(window.saveStatsToFirestore) window.saveStatsToFirestore(appData.stats);
+        
+        updateLevelUI();
+        renderStreakUI();
     }
-    
-    // Atualiza Visual do Fogo
-    const badge = document.getElementById('streakBadge');
-    if(badge && appData.stats) {
-        const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
-        badge.innerHTML = `${flameIcon} ${appData.stats.streak}`;
-    }
-
-    // Atualiza Visual do Nível
-    updateLevelUI();
 }
 
-// NOVO: Renderiza a Pílula Minimalista (Topo) e a Barra de Progresso (Modal)
+function renderStreakUI() {
+    const badge = document.getElementById('streakBadge');
+    if (badge && appData.stats) {
+        const flameIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0 1.1.2 2.2.5 3z"/></svg>`;
+        badge.innerHTML = `${flameIcon} ${appData.stats.streak || 0}`;
+    }
+}
+
+// --- LEVEL UI & GAMIFICATION MODAL ---
+
 export function updateLevelUI() {
     // 1. Atualiza Ícone do Topo (Minimalista)
     const iconEl = document.getElementById('lvlIcon');
-    const pill = document.getElementById('levelBadge');
     
     if (!appData.stats) appData.stats = { currentXP: 0 };
     const currentXP = appData.stats.currentXP || 0;
     
+    // Helper de Utils
     const info = getLevelInfo(currentXP); 
 
-    if (iconEl && pill) {
+    if (iconEl) {
         iconEl.innerText = info.icon;
-        pill.title = `${info.title}: ${currentXP} XP (Clique para ver sua jornada)`;
+        // Tooltip nativo atualizado
+        const pill = document.getElementById('levelBadge');
+        if(pill) pill.title = `${info.title}: ${currentXP} XP (Clique para ver detalhes)`;
     }
 
-    // 2. Atualiza Barra de Progresso (Agora no Modal de Gamificação)
+    // 2. Atualiza Barra (Agora dentro do gamificationModal)
     const xpCurrentEl = document.getElementById('xpCurrentDisplay');
     const xpNextEl = document.getElementById('xpNextDisplay');
     const barFill = document.getElementById('xpBarFill');
@@ -623,6 +620,16 @@ export function updateLevelUI() {
     }
 }
 
+export function openGamificationModal() {
+    updateLevelUI(); 
+    document.getElementById('gamificationModal').style.display = 'flex';
+}
+
+export function closeGamificationModal() {
+    document.getElementById('gamificationModal').style.display = 'none';
+}
+
+// --- PACING & SETTINGS UI ---
 export function updatePacingUI() {
     const btn = document.getElementById('btnPacing');
     if(!btn) return;
@@ -642,14 +649,12 @@ export function updatePacingUI() {
     const indicatorEl = document.getElementById('activePlanIcon');
     if(indicatorEl) indicatorEl.innerHTML = currentConfig.icon;
 
-    // Seleção visual do Card
     document.querySelectorAll('.plan-card-option').forEach(el => el.classList.remove('is-selected'));
     const activeCard = document.getElementById(`planOption${interval}`);
     if (activeCard) {
         activeCard.classList.add('is-selected');
     }
 
-    // Lógica de Bloqueio do Botão Principal (Pacing)
     let lastDate = null;
     if (appData.verses.length > 0) {
         const sorted = [...appData.verses].sort((a,b) => new Date(b.startDate) - new Date(a.startDate));
@@ -698,16 +703,6 @@ export function selectPlan(days) {
 export function openRadarModal() { updateRadar(); document.getElementById('radarModal').style.display = 'flex'; }
 export function closeRadarModal() { document.getElementById('radarModal').style.display = 'none'; }
 
-// NOVO: Funções de Controle do Modal de Gamificação
-export function openGamificationModal() {
-    updateLevelUI(); // Garante atualização antes de abrir
-    document.getElementById('gamificationModal').style.display = 'flex';
-}
-
-export function closeGamificationModal() {
-    document.getElementById('gamificationModal').style.display = 'none';
-}
-
 export function toggleHistory() {
     const section = document.getElementById('historySection');
     section.classList.toggle('collapsed');
@@ -736,7 +731,7 @@ export function clearData() {
     if(confirm('Limpar TUDO? (Isso resetará seus planos e streaks)')) {
         appData.verses = [];
         appData.settings = { planInterval: 1 };
-        appData.stats = { streak: 0, lastLogin: null };
+        appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
         saveToStorage();
         updateTable();
         updateRadar();

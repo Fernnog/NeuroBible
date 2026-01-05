@@ -5,11 +5,11 @@ import {
     isExplanationActive, setIsExplanationActive 
 } from './core.js';
 import { saveToStorage } from './storage.js';
-import { getAcronym, generateClozeText, getLocalDateISO, showToast, getLevelInfo } from './utils.js';
+import { getAcronym, generateClozeText, getLocalDateISO, showToast, getLevelInfo } from './utils.js'; // Import getLevelInfo
 import { renderDashboard, updateRadar } from './ui-dashboard.js';
 import { calculateSRSDates, findNextLightDay } from './srs-engine.js';
 
-// --- GESTÃO DE ÁUDIO v1.2.2 ---
+// --- GESTÃO DE ÁUDIO ---
 let currentUtterance = null; 
 
 export function stopAudio() {
@@ -34,7 +34,6 @@ function resetAudioUI() {
 }
 
 export function toggleAudio() {
-    // Se já estiver falando, para imediatamente
     if (window.speechSynthesis.speaking) {
         stopAudio();
         return;
@@ -43,17 +42,14 @@ export function toggleAudio() {
     const textElement = document.getElementById('cardFullText');
     if (!textElement) return;
     
-    // Limpeza básica: remove espaços excessivos
     const textToRead = textElement.innerText.trim();
     if (!textToRead) return;
 
-    // Configuração da Fala
     currentUtterance = new SpeechSynthesisUtterance(textToRead);
-    currentUtterance.lang = 'pt-BR'; // Detecta voz PT-BR do sistema
-    currentUtterance.rate = 0.9;     // Levemente mais lento para memorização
+    currentUtterance.lang = 'pt-BR'; 
+    currentUtterance.rate = 0.9;     
     currentUtterance.pitch = 1.0;
 
-    // Eventos de Ciclo de Vida
     currentUtterance.onstart = () => {
         const btn = document.getElementById('btnAudioToggle');
         const iconSpeaker = document.getElementById('iconSpeaker');
@@ -95,7 +91,6 @@ export function openDailyReview(dateStr) {
     
     if (versesToReview.length === 0) return;
 
-    // Embaralha (Interleaving)
     versesToReview = versesToReview.sort(() => Math.random() - 0.5);
 
     const modal = document.getElementById('reviewModal');
@@ -132,17 +127,15 @@ export function startFlashcard(verseId) {
     document.getElementById('cardRefBack').innerText = verse.ref; 
     document.getElementById('cardFullText').innerText = verse.text;
     
-    // Reset de Estado
     const hasMnemonic = verse.mnemonic && verse.mnemonic.trim().length > 0;
-    setCardStage(hasMnemonic ? -1 : 0); // Se tem mnemônica começa no -1, senão no 0
+    setCardStage(hasMnemonic ? -1 : 0); 
     setIsExplanationActive(false); 
     
     renderCardContent(verse);
     updateHintButtonUI(); 
-    resetAudioUI(); // Garante UI limpa ao abrir novo card
+    resetAudioUI(); 
 }
 
-// Lógica de Renderização com Animação
 function renderCardContent(verse) {
     const contentEl = document.getElementById('cardTextContent');
     const mnemonicBox = document.getElementById('mnemonicContainer');
@@ -151,40 +144,33 @@ function renderCardContent(verse) {
     const explText = document.getElementById('cardExplanationText');
     const mnemonicText = document.getElementById('cardMnemonicText');
 
-    // Reset visual básico
     contentEl.classList.remove('blur-text');
     mnemonicBox.style.display = 'none';
     explContainer.style.display = 'none';
     contentEl.style.display = 'block';
 
     if (cardStage.value === -1) {
-        // --- ESTÁGIO -1: MNEMÔNICA ---
         refEl.style.display = 'none';
         
         if (isExplanationActive.value) {
-            // MOSTRA A EXPLICAÇÃO
             explContainer.style.display = 'flex';
             explText.innerText = verse.explanation || "Sem explicação cadastrada.";
             mnemonicBox.style.display = 'none'; 
         } else {
-            // MOSTRA A MNEMÔNICA
             mnemonicBox.style.display = 'flex';
             explContainer.style.display = 'none';
             mnemonicText.innerText = verse.mnemonic;
         }
 
-        // Texto borrado (Scaffolding)
         contentEl.innerText = getAcronym(verse.text);
         contentEl.className = 'cloze-text first-letter-mode blur-text'; 
     } 
     else if (cardStage.value === 0) {
-        // --- ESTÁGIO 0: ACRÔNIMO (Iniciais) ---
         refEl.style.display = 'block';
         contentEl.innerText = getAcronym(verse.text);
-        contentEl.className = 'cloze-text first-letter-mode'; // Remove blur
+        contentEl.className = 'cloze-text first-letter-mode'; 
     } 
     else if (cardStage.value === 1) {
-        // --- ESTÁGIO 1: CLOZE (Lacunas) ---
         refEl.style.display = 'block';
         const clozeHTML = generateClozeText(verse.text).replace(/\n/g, '<br>');
         contentEl.innerHTML = `"${clozeHTML}"`;
@@ -192,27 +178,22 @@ function renderCardContent(verse) {
     }
 }
 
-// Nova Lógica de Botões Dinâmicos (Bifurcação)
 function updateHintButtonUI() {
     const controlsArea = document.getElementById('hintControlsArea');
-    const tapIcon = document.getElementById('tapHintIcon'); // Controle de visibilidade do flip
+    const tapIcon = document.getElementById('tapHintIcon'); 
     
-    controlsArea.innerHTML = ''; // Limpa botões anteriores
+    controlsArea.innerHTML = ''; 
     
     const verse = appData.verses.find(v => v.id === currentReviewId.value);
     if (!verse) return;
 
-    // --- FASE 1: MNEMÔNICA (-1) ---
     if (cardStage.value === -1) {
-        // Bloqueia visualização da resposta completa nesta fase
         if(tapIcon) tapIcon.style.display = 'none';
 
-        // Botão A: Contexto (Apenas se houver explicação)
         if (verse.explanation && verse.explanation.trim().length > 0) {
             const btnExpl = document.createElement('button');
             btnExpl.className = 'btn-ghost-accent';
             
-            // Alterna texto do botão dependendo do estado
             if (isExplanationActive.value) {
                 btnExpl.innerHTML = `${ICONS.back} Voltar para Cena Mnemônica`;
             } else {
@@ -223,10 +204,8 @@ function updateHintButtonUI() {
             controlsArea.appendChild(btnExpl);
         }
 
-        // Botão B: Avançar para Treino
         const btnNext = document.createElement('button');
         btnNext.className = 'btn-hint';
-        // Texto muda se o usuário estiver vendo a explicação
         btnNext.innerHTML = isExplanationActive.value 
             ? `${ICONS.next} <span>Entendi! Ir para Iniciais</span>`
             : `${ICONS.next} <span>Lembrei! Ir para Iniciais</span>`;
@@ -234,9 +213,7 @@ function updateHintButtonUI() {
         btnNext.onclick = (e) => { e.stopPropagation(); advanceStage(); };
         controlsArea.appendChild(btnNext);
     } 
-    // --- FASE 2: INICIAIS (0) ---
     else if (cardStage.value === 0) {
-        // Libera ícone de virar (flip)
         if(tapIcon) tapIcon.style.display = 'flex';
 
         const btnHint = document.createElement('button');
@@ -245,43 +222,31 @@ function updateHintButtonUI() {
         btnHint.onclick = (e) => { e.stopPropagation(); advanceStage(); };
         controlsArea.appendChild(btnHint);
     } 
-    // --- FASE 3: LACUNAS (1) ---
     else {
-        // Apenas ícone de virar disponível
         if(tapIcon) tapIcon.style.display = 'flex';
     }
 }
 
-// Alterna apenas a visualização entre Mnemônica e Explicação (Sem avançar estágio)
 export function toggleExplanation() {
     const newVal = !isExplanationActive.value;
     setIsExplanationActive(newVal);
     
     const verse = appData.verses.find(v => v.id === currentReviewId.value);
-    
-    // [MODIFICADO] NÃO chamamos mais registerInteraction aqui.
-    // Visualizar a explicação não conta como interação de memorização.
-    
     renderCardContent(verse);
     updateHintButtonUI();
 }
 
-// Avança na hierarquia cognitiva (Mnemônica -> Iniciais -> Lacunas)
 export function advanceStage() {
     const current = cardStage.value;
     
     if (current === -1) {
-        setCardStage(0); // Vai para Iniciais
-        setIsExplanationActive(false); // Reseta visualização de explicação
+        setCardStage(0); 
+        setIsExplanationActive(false); 
     } else if (current === 0) {
-        setCardStage(1); // Vai para Lacunas
+        setCardStage(1); 
     }
     
     const verse = appData.verses.find(v => v.id === currentReviewId.value);
-    
-    // [MODIFICADO] NÃO chamamos mais registerInteraction aqui.
-    // Avançar etapas de dica é parte do processo, não uma conclusão.
-    
     renderCardContent(verse);
     updateHintButtonUI();
 }
@@ -291,18 +256,16 @@ export function startFlashcardFromDash(id) {
     startFlashcard(id);
 }
 
-// --- FUNÇÃO ATUALIZADA: SUPORTE A SUCESSO ESTRITO (Parâmetro isSuccess) ---
+// --- INTERACTION & GAMIFICATION LOGIC (PERSISTÊNCIA BLINDADA) ---
+
 export function registerInteraction(verse, autoSave = true, isSuccess = false) {
     const todayISO = getLocalDateISO(new Date());
-    
-    // Verifica se estava atrasado (para Toast de recuperação)
     const wasOverdue = verse.dates.some(d => d < todayISO) && verse.lastInteraction !== todayISO;
 
-    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO ---
     let dataUpdated = false;
 
+    // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO E XP ---
     if (verse.lastInteraction !== todayISO) {
-        // Primeira vez no dia
         verse.lastInteraction = todayISO;
         verse.interactionCount = isSuccess ? 1 : 0;
         dataUpdated = true;
@@ -311,102 +274,87 @@ export function registerInteraction(verse, autoSave = true, isSuccess = false) {
             showToast("🚀 Progresso registrado! Item recuperado.", "success");
         }
     } else {
-        // Já interagiu hoje:
         if (isSuccess) {
             verse.interactionCount = (verse.interactionCount || 0) + 1;
             dataUpdated = true;
-            // Feedback discreto para interação extra
             if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x)`, "success");
         }
     }
 
-    // --- BLOCO 1.5: GAMIFICAÇÃO & PERSISTÊNCIA ROBUSTA (v1.2.9) ---
+    // Lógica de XP (Apenas sucesso) com salvamento FORÇADO
     if (isSuccess) {
-        // Garante que o objeto stats existe e tem XP
         if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO, currentXP: 0 };
         if (typeof appData.stats.currentXP === 'undefined') appData.stats.currentXP = 0;
         
-        // Pega nível antigo
-        const oldLevelInfo = getLevelInfo(appData.stats.currentXP);
-        
-        // Incrementa XP
-        appData.stats.currentXP++;
-        
-        // Pega nível novo
+        const oldLevel = getLevelInfo(appData.stats.currentXP).title;
+        appData.stats.currentXP++; // +1 XP
         const newLevelInfo = getLevelInfo(appData.stats.currentXP);
         
-        // SALVAMENTO IMEDIATO NA NUVEM (Correção de Persistência)
+        // FORÇA PERSISTÊNCIA NA NUVEM IMEDIATAMENTE (Garante que XP não volta)
         if (window.saveStatsToFirestore) {
             window.saveStatsToFirestore(appData.stats);
         }
 
-        // Feedback de Level Up
-        if (newLevelInfo.title !== oldLevelInfo.title) {
+        // Feedback Inteligente de Nível
+        if (newLevelInfo.title !== oldLevel) {
             showToast(`🎉 LEVEL UP! Agora você é: ${newLevelInfo.title}`, "success");
-            
-            // Animação na pílula do topo
+            // Se o badge estiver visível, anima
             const badge = document.getElementById('levelBadge');
             if(badge) {
                 badge.classList.remove('levelup');
-                void badge.offsetWidth; // trigger reflow
+                void badge.offsetWidth; 
                 badge.classList.add('levelup');
             }
-        } else if (appData.stats.currentXP % 5 === 0) {
-            // Feedback de progresso a cada 5 pontos
-            if(window.showToast) showToast(`+1 XP (${appData.stats.currentXP})`, "success");
         }
     }
 
-    // Persistência na Nuvem do Versículo
+    // Persistência do Versículo na Nuvem
     if (dataUpdated && autoSave && window.saveVerseToFirestore) {
         window.saveVerseToFirestore(verse, false, 'Interaction_Register');
     }
 
-    // --- BLOCO 2: ATUALIZAÇÃO DO STREAK (Sempre Executa) ---
+    // --- BLOCO 2: ATUALIZAÇÃO DO STREAK (LÓGICA BLINDADA) ---
+    // O checkStreak (audit) só roda no load. Aqui (ação) é onde atualizamos.
     
-    if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO, currentXP: 0 };
+    if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
     
-    let statsChanged = false;
-
-    if (!appData.stats.streak || appData.stats.streak <= 0) {
-        appData.stats.streak = 1;
+    // Só atualizamos Streak e Data SE for um novo dia de interação
+    if (appData.stats.lastLogin !== todayISO) {
+        
+        // Incrementa Streak
+        appData.stats.streak = (appData.stats.streak || 0) + 1;
+        
+        // Trava a data em HOJE
         appData.stats.lastLogin = todayISO;
-        statsChanged = true;
-    } 
-    else if (appData.stats.lastLogin !== todayISO) {
-        appData.stats.lastLogin = todayISO;
-        statsChanged = true;
-    }
-
-    // Persistência Global Local
-    saveToStorage();
-    
-    if (statsChanged) {
+        
+        // Feedback visual do Streak
+        if(window.showToast) showToast(`🔥 Streak: ${appData.stats.streak} dias!`, "success");
+        
+        // Salva Stats atualizados
         if (window.saveStatsToFirestore) {
             window.saveStatsToFirestore(appData.stats);
         }
     }
-    
-    // Renderiza Dashboard
+
+    // Persistência Local Global
+    saveToStorage();
     renderDashboard(); 
 }
 
 export function handleDifficulty(level) {
-    // CRÍTICO: Para o áudio antes de processar saída
     stopAudio();
 
     const verseIndex = appData.verses.findIndex(v => v.id === currentReviewId.value);
     if (verseIndex === -1) return;
     const verse = appData.verses[verseIndex];
 
-    // [MODIFICADO] Determina se é sucesso para incrementar contador e XP
+    // Se level == 'easy', é Sucesso (XP++)
     const isSuccess = (level === 'easy');
 
-    // PASSO 1: Registra interação (false = não salva no banco imediatamente)
-    // Passamos o isSuccess para controlar o incremento do contador e XP
+    // Registra interação e lida com XP/Streak
     registerInteraction(verse, false, isSuccess);
 
-    // PASSO 2: Aplica lógica de datas
+    // Lógica de SRS
     if (level === 'hard') {
         const today = new Date();
         const start = new Date(verse.startDate + 'T00:00:00');
@@ -437,7 +385,6 @@ export function handleDifficulty(level) {
         showToast('Ótimo! Segue o plano.', 'success');
     }
 
-    // PASSO 3: PERSISTÊNCIA CONSOLIDADA
     saveToStorage(); // Salva localmente
     if (window.saveVerseToFirestore) {
         window.saveVerseToFirestore(verse, false, `Difficulty_${level}`); 
@@ -449,23 +396,18 @@ export function handleDifficulty(level) {
 }
 
 export function flipCard() {
-    // CRÍTICO: Para o áudio se o usuário desvirar o cartão
     stopAudio();
     document.getElementById('flashcardInner').classList.toggle('is-flipped');
 }
 
 export function backToList() {
-    // CRÍTICO: Para o áudio ao voltar para a lista
     stopAudio();
-
     document.getElementById('reviewListContainer').style.display = 'block';
     document.getElementById('flashcardContainer').style.display = 'none';
     document.getElementById('flashcardInner').classList.remove('is-flipped');
 }
 
 export function closeReview() {
-    // CRÍTICO: Para o áudio ao fechar modal
     stopAudio();
-
     document.getElementById('reviewModal').style.display = 'none';
 }
