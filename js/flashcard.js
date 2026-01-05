@@ -5,7 +5,7 @@ import {
     isExplanationActive, setIsExplanationActive 
 } from './core.js';
 import { saveToStorage } from './storage.js';
-import { getAcronym, generateClozeText, getLocalDateISO, showToast, getLevelInfo } from './utils.js'; // Import getLevelInfo
+import { getAcronym, generateClozeText, getLocalDateISO, showToast, getLevelInfo } from './utils.js';
 import { renderDashboard, updateRadar } from './ui-dashboard.js';
 import { calculateSRSDates, findNextLightDay } from './srs-engine.js';
 
@@ -256,49 +256,33 @@ export function startFlashcardFromDash(id) {
     startFlashcard(id);
 }
 
-// --- INTERACTION & GAMIFICATION LOGIC (PERSISTÊNCIA BLINDADA) ---
+// --- INTERACTION & GAMIFICATION LOGIC (PERSISTÊNCIA v1.3.1) ---
 
 export function registerInteraction(verse, autoSave = true, isSuccess = false) {
     const todayISO = getLocalDateISO(new Date());
-    const wasOverdue = verse.dates.some(d => d < todayISO) && verse.lastInteraction !== todayISO;
-
+    
     let dataUpdated = false;
 
     // --- BLOCO 1: ATUALIZAÇÃO DO VERSÍCULO E XP ---
-    if (verse.lastInteraction !== todayISO) {
-        verse.lastInteraction = todayISO;
-        verse.interactionCount = isSuccess ? 1 : 0;
-        dataUpdated = true;
-        
-        if (wasOverdue) {
-            showToast("🚀 Progresso registrado! Item recuperado.", "success");
-        }
-    } else {
-        if (isSuccess) {
-            verse.interactionCount = (verse.interactionCount || 0) + 1;
-            dataUpdated = true;
-            if(window.showToast) showToast(`Reforço registrado! (${verse.interactionCount}x)`, "success");
-        }
-    }
-
-    // Lógica de XP (Apenas sucesso) com salvamento FORÇADO
     if (isSuccess) {
         if (!appData.stats) appData.stats = { streak: 0, lastLogin: todayISO, currentXP: 0 };
         if (typeof appData.stats.currentXP === 'undefined') appData.stats.currentXP = 0;
         
         const oldLevel = getLevelInfo(appData.stats.currentXP).title;
-        appData.stats.currentXP++; // +1 XP
+        
+        // PADRÃO ÉTICO: XP é sempre +1, sem recompensar o erro/atraso.
+        appData.stats.currentXP += 1; 
+        
         const newLevelInfo = getLevelInfo(appData.stats.currentXP);
         
-        // FORÇA PERSISTÊNCIA NA NUVEM IMEDIATAMENTE (Garante que XP não volta)
+        // Persistência Imediata de XP
         if (window.saveStatsToFirestore) {
             window.saveStatsToFirestore(appData.stats);
         }
 
-        // Feedback Inteligente de Nível
+        // Feedback de Nível
         if (newLevelInfo.title !== oldLevel) {
             showToast(`🎉 LEVEL UP! Agora você é: ${newLevelInfo.title}`, "success");
-            // Se o badge estiver visível, anima
             const badge = document.getElementById('levelBadge');
             if(badge) {
                 badge.classList.remove('levelup');
@@ -308,35 +292,31 @@ export function registerInteraction(verse, autoSave = true, isSuccess = false) {
         }
     }
 
+    // Atualiza metadados do versículo (Sempre incrementa interação em caso de sucesso)
+    const interactionUpdated = (verse.lastInteraction !== todayISO || isSuccess);
+    if (interactionUpdated) {
+        verse.interactionCount = (verse.interactionCount || 0) + (isSuccess ? 1 : 0);
+        verse.lastInteraction = todayISO;
+        dataUpdated = true;
+    }
+
     // Persistência do Versículo na Nuvem
     if (dataUpdated && autoSave && window.saveVerseToFirestore) {
         window.saveVerseToFirestore(verse, false, 'Interaction_Register');
     }
 
-    // --- BLOCO 2: ATUALIZAÇÃO DO STREAK (LÓGICA BLINDADA) ---
-    // O checkStreak (audit) só roda no load. Aqui (ação) é onde atualizamos.
-    
-    if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
-    
-    // Só atualizamos Streak e Data SE for um novo dia de interação
+    // --- BLOCO 2: ATUALIZAÇÃO DO STREAK ---
     if (appData.stats.lastLogin !== todayISO) {
-        
-        // Incrementa Streak
         appData.stats.streak = (appData.stats.streak || 0) + 1;
-        
-        // Trava a data em HOJE
         appData.stats.lastLogin = todayISO;
         
-        // Feedback visual do Streak
         if(window.showToast) showToast(`🔥 Streak: ${appData.stats.streak} dias!`, "success");
         
-        // Salva Stats atualizados
         if (window.saveStatsToFirestore) {
             window.saveStatsToFirestore(appData.stats);
         }
     }
 
-    // Persistência Local Global
     saveToStorage();
     renderDashboard(); 
 }
@@ -348,7 +328,6 @@ export function handleDifficulty(level) {
     if (verseIndex === -1) return;
     const verse = appData.verses[verseIndex];
 
-    // Se level == 'easy', é Sucesso (XP++)
     const isSuccess = (level === 'easy');
 
     // Registra interação e lida com XP/Streak
@@ -385,7 +364,7 @@ export function handleDifficulty(level) {
         showToast('Ótimo! Segue o plano.', 'success');
     }
 
-    saveToStorage(); // Salva localmente
+    saveToStorage(); 
     if (window.saveVerseToFirestore) {
         window.saveVerseToFirestore(verse, false, `Difficulty_${level}`); 
     }
