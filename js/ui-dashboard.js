@@ -108,7 +108,7 @@ export function renderDashboard() {
     const todayStr = getLocalDateISO(new Date());
     const todayDateObj = new Date(todayStr + 'T00:00:00');
     
-    // 1. Lógica de Atrasados (Com Persistência Diária e Melhoria de UX de Ordenação)
+    // 1. Lógica de Atrasados com Persistência e Ordenação
     let maxDelayDays = 0;
 
     const overdueVerses = appData.verses.filter(v => {
@@ -117,12 +117,11 @@ export function renderDashboard() {
 
         const lastInt = v.lastInteraction || '0000-00-00';
         
-        // Critério v1.3.1: Se há datas passadas não batidas OU se interagiu hoje vindo de um atraso
+        // Critério: Pendências reais OU item que foi recuperado hoje
         const unmetDeadlines = pastDates.filter(scheduledDate => scheduledDate > lastInt);
         const isRecoveredToday = (v.lastInteraction === todayStr);
 
         if (unmetDeadlines.length > 0 || isRecoveredToday) {
-            // Se já bateu hoje, vira "Recuperado", senão vira data do atraso mais antigo
             const referenceDateStr = unmetDeadlines.length > 0 ? unmetDeadlines[0] : pastDates[pastDates.length - 1];
             const missedDateObj = new Date(referenceDateStr + 'T00:00:00');
             const diffTime = Math.abs(todayDateObj - missedDateObj);
@@ -136,14 +135,13 @@ export function renderDashboard() {
             return true;
         }
         return false;
-    }).sort((a, b) => b._displayDelayDays - a._displayDelayDays); // Ordenação por maior atraso
+    }).sort((a, b) => b._displayDelayDays - a._displayDelayDays);
 
     // 2. Atualiza Badge Global de Atraso
     if (delayBadge && delayCount) {
         if (maxDelayDays > 0) {
             delayBadge.style.display = 'flex';
             delayCount.innerText = `${maxDelayDays}d`;
-            delayBadge.title = `Atraso máximo acumulado: ${maxDelayDays} dias`;
         } else {
             delayBadge.style.display = 'none';
         }
@@ -151,7 +149,6 @@ export function renderDashboard() {
 
     // Filtra revisão de hoje
     const todayVerses = appData.verses.filter(v => v.dates.includes(todayStr));
-
     dash.style.display = 'block';
 
     // 3. Renderiza Atrasados
@@ -172,15 +169,11 @@ export function renderDashboard() {
                     `<div style="display:flex; align-items:center; color:#27ae60; font-size:0.8rem; font-weight:bold;">${checkIcon} Recuperado</div>` :
                     `<div style="display:flex; align-items:center; color:#c0392b; font-size:0.8rem; font-weight:bold;">${overdueIcon} Recuperar</div>`;
 
-                const delayInfo = v._isRecoveredToday ? 
-                    `<small style="color:#27ae60; font-weight:bold;">Bônus Ativo</small>` :
-                    `<small style="color:#c0392b; font-weight:bold;">-${v._displayDelayDays} dias</small>`;
-
                 return `
                     <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor}; flex-direction: column; align-items: flex-start;">
                         <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                             <strong>${v.ref}</strong>
-                            ${delayInfo}
+                            <small style="color:${v._isRecoveredToday ? '#27ae60' : '#c0392b'}; font-weight:bold;">${v._isRecoveredToday ? 'Reforço Ativo' : '-' + v._displayDelayDays + ' dias'}</small>
                         </div>
                         
                         <div style="display:flex; align-items:center; width:100%; margin-top:8px;">
