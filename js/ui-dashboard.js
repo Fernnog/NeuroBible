@@ -26,14 +26,12 @@ export function updateRadar() {
     const currentPreviewDates = startDateInput ? calculateSRSDates(startDateInput) : [];
     const loadMap = {};
 
-    // Mapeia carga atual
     appData.verses.forEach(v => {
         v.dates.forEach(d => {
             loadMap[d] = (loadMap[d] || 0) + 1;
         });
     });
 
-    // Adiciona carga do preview (se houver input)
     const refEl = document.getElementById('ref');
     const isPreviewActive = refEl && refEl.value.trim() !== "";
     
@@ -56,7 +54,6 @@ export function updateRadar() {
         }
     }
 
-    // Renderiza 63 dias
     const today = new Date();
     for (let i = 0; i < 63; i++) {
         const d = new Date(today);
@@ -91,11 +88,11 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER (ATUALIZADO PRIORIDADE 1) ---
+// --- DASHBOARD RENDER (REESTRUTURADO v1.3.2) ---
 export function renderDashboard() {
-    const dash = document.getElementById('todayDashboard');
-    const list = document.getElementById('todayList');
-    const countEl = document.getElementById('todayCount');
+    const todayDash = document.getElementById('todayDashboard');
+    const todayList = document.getElementById('todayList');
+    const todayCount = document.getElementById('todayCount');
     const overduePanel = document.getElementById('overduePanel');
     const overdueList = document.getElementById('overdueList');
     const overdueCount = document.getElementById('overdueCount');
@@ -103,21 +100,19 @@ export function renderDashboard() {
     const delayBadge = document.getElementById('delayBadge');
     const delayCount = document.getElementById('delayCount');
 
-    if(!dash || !list) return;
+    if(!todayDash || !todayList) return;
 
     const todayStr = getLocalDateISO(new Date());
     const todayDateObj = new Date(todayStr + 'T00:00:00');
     
-    // 1. Lógica de Atrasados com Persistência e Ordenação
     let maxDelayDays = 0;
 
+    // 1. Processamento de Atrasados
     const overdueVerses = appData.verses.filter(v => {
         const pastDates = v.dates.filter(d => d < todayStr);
         if (pastDates.length === 0) return false;
 
         const lastInt = v.lastInteraction || '0000-00-00';
-        
-        // Critério: Pendências reais OU item que foi recuperado hoje
         const unmetDeadlines = pastDates.filter(scheduledDate => scheduledDate > lastInt);
         const isRecoveredToday = (v.lastInteraction === todayStr);
 
@@ -147,11 +142,10 @@ export function renderDashboard() {
         }
     }
 
-    // Filtra revisão de hoje
+    // 3. Processamento de Versículos de Hoje
     const todayVerses = appData.verses.filter(v => v.dates.includes(todayStr));
-    dash.style.display = 'block';
 
-    // 3. Renderiza Atrasados (COM MELHORIAS VISUAIS)
+    // --- RENDER PAINEL ATRASADOS ---
     if (overdueVerses.length > 0 && overduePanel) {
         overduePanel.style.display = 'block';
         if(overdueCount) overdueCount.innerText = overdueVerses.length;
@@ -162,39 +156,35 @@ export function renderDashboard() {
 
         if(overdueList) {
             overdueList.innerHTML = overdueVerses.map(v => {
-                const itemClass = v._isRecoveredToday ? 'dash-item overdue-completed' : 'dash-item';
-                const borderColor = v._isRecoveredToday ? '#27ae60' : '#c0392b';
+                // RESET VISUAL: Contador só aparece se a interação foi HOJE
+                const count = v.lastInteraction === todayStr ? (v.interactionCount || 0) : 0;
+                const hasBadge = count > 0;
                 
-                const statusBadge = v._isRecoveredToday ? 
-                    `<div style="display:flex; align-items:center; color:#27ae60; font-size:0.8rem; font-weight:bold;">${checkIcon} Recuperado</div>` :
-                    `<div style="display:flex; align-items:center; color:#c0392b; font-size:0.8rem; font-weight:bold;">${overdueIcon} Recuperar</div>`;
-                
-                // MELHORIA: Cor fixa vermelha para alertar, mesmo se recuperado
-                const statusTextColor = '#c0392b';
+                const itemClass = `dash-item ${v._isRecoveredToday ? 'overdue-completed' : ''} ${hasBadge ? 'has-badge' : ''}`;
+                const borderColor = v._isRecoveredToday ? '#27ae60' : '#2980b9';
+                const statusTextColor = v._isRecoveredToday ? '#27ae60' : '#c0392b';
 
-                // MELHORIA: Badge de Interação nos Atrasados
-                const count = v.interactionCount || 0;
                 let badgeHTML = '';
-                if (count > 0) {
+                if (hasBadge) {
                     let badgeClass = 'interaction-badge';
                     if (count >= 10) badgeClass += ' purple'; 
                     else if (count >= 5) badgeClass += ' gold';   
-                    badgeHTML = `<div class="${badgeClass}" title="${count} interações de recuperação">${count}</div>`;
+                    badgeHTML = `<div class="${badgeClass}" title="${count} interações de recuperação hoje">${count}</div>`;
                 }
 
                 return `
                     <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor}; flex-direction: column; align-items: flex-start; position: relative;">
                         <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                             <strong>${v.ref}</strong>
-                            <small style="color:${statusTextColor}; font-weight:bold;">${v._isRecoveredToday ? 'Reforço Ativo' : '-' + v._displayDelayDays + ' dias'}</small>
+                            <small style="color:${statusTextColor}; font-weight:bold;">${v._isRecoveredToday ? 'Recuperado' : '-' + v._displayDelayDays + ' dias'}</small>
                         </div>
                         
                         <div style="display:flex; align-items:center; width:100%; margin-top:8px;">
-                            <span class="overdue-date-chip" title="Data original do agendamento">
+                            <span class="overdue-date-chip" title="Data original">
                                 ${calendarIcon} ${v._displayMissedDate}
                             </span>
-                            <div style="margin-left:auto;">
-                                ${statusBadge}
+                            <div style="margin-left:auto; display:flex; align-items:center; color:${borderColor}; font-size:0.8rem; font-weight:bold;">
+                                ${v._isRecoveredToday ? checkIcon + ' Reforço' : overdueIcon + ' Recuperar'}
                             </div>
                         </div>
                         ${badgeHTML}
@@ -206,42 +196,35 @@ export function renderDashboard() {
         overduePanel.style.display = 'none';
     }
 
-    // Renderiza Hoje (COM BORDA LATERAL PADRONIZADA)
-    countEl.innerText = todayVerses.length;
+    // --- RENDER PAINEL MISSÃO HOJE ---
+    todayDash.style.display = 'block';
+    todayCount.innerText = todayVerses.length;
     
     if(todayVerses.length === 0) {
-        if(overdueVerses.length === 0) {
-            list.innerHTML = `<div class="dash-empty-state">Tudo em dia! Nenhuma revisão pendente.</div>`;
-        } else {
-             list.innerHTML = `<div class="dash-empty-state">Foque nos atrasados acima!</div>`;
-        }
+        todayList.innerHTML = `<div class="dash-empty-state">Tudo em dia! Nenhuma nova missão para hoje.</div>`;
     } else {
-        list.innerHTML = todayVerses.map(v => {
+        todayList.innerHTML = todayVerses.map(v => {
             const isDone = v.lastInteraction === todayStr;
-            const count = v.interactionCount || 0;
+            const count = isDone ? (v.interactionCount || 0) : 0; // Reset visual diário
+            const hasBadge = count > 0;
             
-            let itemClass = 'dash-item';
-            let statusIcon = `<small style="color:var(--accent)">▶ Treinar</small>`;
-            // MELHORIA: Define cor da borda (Azul = Pendente, Verde = Feito)
+            let itemClass = `dash-item ${isDone ? 'completed' : ''} ${hasBadge ? 'has-badge' : ''}`;
             const borderColor = isDone ? '#2ecc71' : 'var(--accent)';
 
-            if (isDone) {
-                itemClass = 'dash-item completed'; 
-                const checkSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-                statusIcon = `<small>${checkSVG} Feito</small>`;
-            }
+            let statusIcon = isDone ? 
+                `<small style="color:#27ae60; font-weight:bold;">✓ Feito</small>` : 
+                `<small style="color:var(--accent)">▶ Treinar</small>`;
 
             let badgeHTML = '';
-            if (count > 0) {
+            if (hasBadge) {
                 let badgeClass = 'interaction-badge';
                 if (count >= 10) badgeClass += ' purple'; 
                 else if (count >= 5) badgeClass += ' gold';   
                 badgeHTML = `<div class="${badgeClass}" title="${count} interações hoje">${count}</div>`;
             }
 
-            // Aplicada a borda-left no estilo inline
             return `
-            <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor};">
+            <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor}; position: relative;">
                 <strong>${v.ref}</strong>
                 ${statusIcon}
                 ${badgeHTML}
@@ -299,7 +282,8 @@ function finalizeSave(ref, text, startDate, reviewDates) {
         explanation: explanation, 
         startDate: startDate,
         dates: reviewDates,
-        lastInteraction: null 
+        lastInteraction: null,
+        interactionCount: 0
     };
     
     addVerseToState(newVerse);
@@ -322,7 +306,6 @@ function finalizeSave(ref, text, startDate, reviewDates) {
     showToast(`"${ref}" agendado com sucesso!`, 'success');
 }
 
-// EDIT MODE
 export function startEdit(id) {
     const verse = appData.verses.find(v => v.id === id);
     if(!verse) return;
@@ -346,7 +329,6 @@ export function startEdit(id) {
     if(btnControls) btnControls.style.display = 'flex';
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    showToast('Modo de Edição Ativo', 'warning');
     updatePreviewPanel();
 }
 
@@ -407,7 +389,6 @@ export function cancelEdit() {
     updatePreviewPanel();
 }
 
-// DELETE & UNDO
 let undoTimer = null;
 let verseBackup = null;
 let verseIndexBackup = -1;
@@ -471,7 +452,6 @@ function showUndoToast(id) {
     setTimeout(() => { if(el.parentNode) el.remove(); }, 5000);
 }
 
-// --- TABLE & PREVIEW UI ---
 export function updateTable() {
     const tbody = document.getElementById('historyTableBody');
     if(!tbody) return;
@@ -539,13 +519,9 @@ function getCurrentLoadMap() {
     return map;
 }
 
-// --- STREAK & LEVEL SYSTEM ---
-
 export function checkStreak() {
     const today = getLocalDateISO(new Date());
-    
     if (!appData.stats) appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
-    
     const lastInteraction = appData.stats.lastLogin;
 
     if (!lastInteraction) {
@@ -558,29 +534,17 @@ export function checkStreak() {
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
     const yesterdayStr = getLocalDateISO(yesterdayDate);
 
-    if (lastInteraction === today) {
-        updateLevelUI();
-        renderStreakUI();
-        return;
-    }
-
-    if (lastInteraction === yesterdayStr) {
+    if (lastInteraction === today || lastInteraction === yesterdayStr) {
         updateLevelUI();
         renderStreakUI();
         return;
     }
 
     if (lastInteraction < yesterdayStr) {
-        if (appData.stats.streak > 0) {
-            if(window.showToast) showToast("Dias pulados. O Streak reiniciou.", "error");
-        }
-        
         appData.stats.streak = 0;
         appData.stats.currentXP = 0; 
-        
         saveToStorage();
         if(window.saveStatsToFirestore) window.saveStatsToFirestore(appData.stats);
-        
         updateLevelUI();
         renderStreakUI();
     }
@@ -594,20 +558,16 @@ function renderStreakUI() {
     }
 }
 
-// --- LEVEL UI & GAMIFICATION MODAL ---
-
 export function updateLevelUI() {
     const iconEl = document.getElementById('lvlIcon');
-    
     if (!appData.stats) appData.stats = { currentXP: 0 };
     const currentXP = appData.stats.currentXP || 0;
-    
     const info = getLevelInfo(currentXP); 
 
     if (iconEl) {
         iconEl.innerText = info.icon;
         const pill = document.getElementById('levelBadge');
-        if(pill) pill.title = `${info.title}: ${currentXP} XP (Clique para ver detalhes)`;
+        if(pill) pill.title = `${info.title}: ${currentXP} XP`;
     }
 
     const xpCurrentEl = document.getElementById('xpCurrentDisplay');
@@ -617,13 +577,8 @@ export function updateLevelUI() {
     if (barFill) {
         let percentage = 0;
         let range = info.next - info.min;
-        
-        if (info.next === Infinity) {
-            percentage = 100;
-        } else {
-            let xpInLevel = currentXP - info.min;
-            percentage = Math.floor((xpInLevel / range) * 100);
-        }
+        if (info.next === Infinity) percentage = 100;
+        else percentage = Math.floor(((currentXP - info.min) / range) * 100);
         
         barFill.style.width = `${percentage}%`;
         if(xpCurrentEl) xpCurrentEl.innerText = `${currentXP} XP`;
@@ -640,31 +595,23 @@ export function closeGamificationModal() {
     document.getElementById('gamificationModal').style.display = 'none';
 }
 
-// --- PACING & SETTINGS UI ---
 export function updatePacingUI() {
     const btn = document.getElementById('btnPacing');
     if(!btn) return;
-    
     const interval = appData.settings?.planInterval || 1;
+    const indicatorEl = document.getElementById('activePlanIcon');
     
-    const planConfig = {
-        1: { label: "Diário", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
-        2: { label: "Alternado", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>' },
-        3: { label: "Modo Leve", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>' }
+    const icons = {
+        1: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        2: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>',
+        3: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>'
     };
 
-    const currentConfig = planConfig[interval] || planConfig[1];
-    const labelEl = document.getElementById('currentPlanLabel');
-    if(labelEl) labelEl.innerText = currentConfig.label;
-
-    const indicatorEl = document.getElementById('activePlanIcon');
-    if(indicatorEl) indicatorEl.innerHTML = currentConfig.icon;
+    if(indicatorEl) indicatorEl.innerHTML = icons[interval] || icons[1];
 
     document.querySelectorAll('.plan-card-option').forEach(el => el.classList.remove('is-selected'));
     const activeCard = document.getElementById(`planOption${interval}`);
-    if (activeCard) {
-        activeCard.classList.add('is-selected');
-    }
+    if (activeCard) activeCard.classList.add('is-selected');
 
     let lastDate = null;
     if (appData.verses.length > 0) {
@@ -672,24 +619,13 @@ export function updatePacingUI() {
         lastDate = new Date(sorted[0].startDate + 'T00:00:00');
     }
 
-    if (!lastDate) {
-        setPacingState(btn, 'ready');
-        return;
-    }
-
+    if (!lastDate) { setPacingState(btn, 'ready'); return; }
     const today = new Date();
     today.setHours(0,0,0,0);
-    const diffTime = Math.abs(today - lastDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(Math.abs(today - lastDate) / (1000 * 60 * 60 * 24));
 
-    if (diffDays >= interval) {
-        setPacingState(btn, 'ready');
-        btn.title = "Novo versículo liberado!";
-    } else {
-        const remaining = interval - diffDays;
-        setPacingState(btn, 'blocked');
-        btn.title = `Aguarde ${remaining} dia(s).`;
-    }
+    if (diffDays >= interval) setPacingState(btn, 'ready');
+    else setPacingState(btn, 'blocked');
 }
 
 function setPacingState(btn, state) {
@@ -697,10 +633,7 @@ function setPacingState(btn, state) {
     btn.classList.add(`is-${state}`);
 }
 
-export function openPlanModal() { 
-    document.getElementById('planModal').style.display = 'flex'; 
-    updatePacingUI(); 
-}
+export function openPlanModal() { document.getElementById('planModal').style.display = 'flex'; updatePacingUI(); }
 export function closePlanModal() { document.getElementById('planModal').style.display = 'none'; }
 export function selectPlan(days) {
     appData.settings.planInterval = days;
@@ -708,7 +641,6 @@ export function selectPlan(days) {
     if(window.saveSettingsToFirestore) window.saveSettingsToFirestore(appData.settings);
     updatePacingUI();
     closePlanModal();
-    showToast(`Plano atualizado!`, 'success');
 }
 
 export function openRadarModal() { updateRadar(); document.getElementById('radarModal').style.display = 'flex'; }
@@ -724,22 +656,13 @@ export function toggleHistory() {
 export function filterHistory() {
     const term = document.getElementById('searchHistory').value.toLowerCase();
     const rows = document.querySelectorAll('#historyTable tbody tr');
-    let visibleCount = 0;
     rows.forEach(row => {
-        const refText = row.cells[0].innerText.toLowerCase(); 
-        if (refText.includes(term)) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
+        row.style.display = row.cells[0].innerText.toLowerCase().includes(term) ? '' : 'none';
     });
-    const noResult = document.getElementById('noResultsMsg');
-    if (noResult) noResult.style.display = (visibleCount === 0 && rows.length > 0) ? 'block' : 'none';
 }
 
 export function clearData() {
-    if(confirm('Limpar TUDO? (Isso resetará seus planos e streaks)')) {
+    if(confirm('Limpar TUDO?')) {
         appData.verses = [];
         appData.settings = { planInterval: 1 };
         appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
@@ -758,7 +681,6 @@ export function confirmSmartReschedule() {
     const optimizedDates = data.dates.map(dateStr => findNextLightDay(dateStr, appData));
     finalizeSave(data.ref, data.text, data.startDate, optimizedDates);
     closeConflictModal();
-    showToast('Agenda otimizada com sucesso!', 'success');
 }
 
 export function closeConflictModal() {
@@ -766,7 +688,6 @@ export function closeConflictModal() {
     setPendingVerseData(null);
 }
 
-// Changelog UI
 export function openChangelog() {
     const modal = document.getElementById('changelogModal');
     const body = document.getElementById('changelogBody');
