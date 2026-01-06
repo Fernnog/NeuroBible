@@ -2,6 +2,18 @@
 
 export const systemChangelog = [
     {
+        version: "1.3.3",
+        date: "2026-01-05",
+        title: "Arquitetura de Painéis & Reset de Fluxo",
+        changes: [
+            "📦 <b>Independência de Painéis:</b> O painel de 'Atrasados' agora é um container físico independente, separado da 'Missão de Hoje' para melhor organização mental.",
+            "🔵 <b>Identidade Prioritária:</b> Implementação de uma nova borda azulada e fundo gradiente suave para destacar versículos em atraso como prioridade máxima.",
+            "♻️ <b>Reset Diário de Esforço:</b> Os contadores de interação agora zeram fisicamente a cada novo dia, garantindo que o número exibido reflita apenas o seu trabalho do dia atual.",
+            "📏 <b>Safe Padding:</b> Ajuste de layout nos cards para garantir que o badge de interações nunca sobreponha os textos de status ('Recuperando' ou 'Feito').",
+            "🧹 <b>Clean UI:</b> Remoção da linha tracejada legada, substituída por uma separação baseada em blocos de conteúdo."
+        ]
+    },
+    {
         version: "1.3.2",
         date: "2026-01-05",
         title: "Padronização Visual & Feedback de Recuperação",
@@ -71,115 +83,6 @@ export const systemChangelog = [
             "📅 <b>Limpeza do Painel:</b> Fim dos versículos 'fantasmas' no painel de atrasados. Apenas itens que realmente não foram revisados desde a data de agendamento aparecerão lá.",
             "⚡ <b>Cache Refresh:</b> Atualização forçada do Service Worker para garantir que a nova lógica substitua imediatamente a versão antiga em dispositivos móveis."
         ]
-    },
-    {
-        version: "1.2.5",
-        date: "2025-12-29",
-        title: "Feedback Visual & Gestão de Atraso",
-        changes: [
-            "✅ <b>Conclusão Visual:</b> Sensação de dever cumprido! Versículos revisados no dia agora ganham destaque verde e ícone de 'check' na lista, confirmando a interação imediatamente.",
-            "🕒 <b>Monitor de Atraso:</b> Novo indicador dedicado (vermelho) no botão de ritmo mostra claramente os dias de atraso acumulados, separado do contador de streak.",
-            "🔥 <b>Sincronia de Interface:</b> Refinamento na atualização dos contadores para garantir que o número de dias consecutivos (fogo) esteja sempre preciso após as revisões."
-        ]
-    },
-    {
-        version: "1.2.4",
-        date: "2025-12-29",
-        title: "Transparência na Nuvem & Atraso",
-        changes: [
-            "☁️ <b>Feedback de Nuvem Explícito:</b> Fim da 'ansiedade de dados'. Agora o sistema exibe notificações visuais ('Sincronizado!') e logs técnicos detalhados sempre que salva um versículo ou estatística no Firebase.",
-            "🕒 <b>Badge de Atraso (Restaurado):</b> O indicador vermelho de 'dias acumulados' voltou ao botão de ritmo (canto esquerdo), permitindo visualizar sua dívida de revisão num relance.",
-            "🔥 <b>Sincronia de Streak Robusta:</b> O contador de constância agora força o salvamento na nuvem a cada recálculo, garantindo que seu progresso não seja perdido ao trocar de dispositivo."
-        ]
-    },
-    {
-        version: "1.2.3",
-        date: "2025-12-29",
-        title: "Consciência Temporal & UX",
-        changes: [
-            "⏰ <b>Monitor de Atraso:</b> Novo indicador visual (ícone de relógio) no menu superior alerta sobre sua 'dívida temporal' em dias.",
-            "🎨 <b>Redesign do Botão de Ritmo:</b> O botão de perfil agora possui formato retangular (cápsula) para acomodar os indicadores de Streak e Atraso sem poluição visual.",
-            "📅 <b>Data Precisa:</b> Os cards de versículos atrasados agora exibem a data original do agendamento (DD/MM/AAAA), facilitando a priorização da recuperação."
-        ]
-    },
-    {
-        version: "1.2.2",
-        date: "2025-12-27",
-        title: "Voz & Dupla Codificação",
-        changes: [
-            "🔊 <b>Leitura Neural (TTS):</b> Agora o NeuroBible lê os versículos para você! Adicionado o botão 'Ouvir' no verso dos cards para ativar a memória auditiva.",
-            "🧠 <b>Dual Coding:</b> Aplicação prática de neurociência. Ler e ouvir ao mesmo tempo cria duas trilhas neurais distintas, aumentando drasticamente a retenção.",
-            "🛑 <b>Smart Stop:</b> O sistema de áudio é inteligente e respeita seu foco. A leitura para automaticamente ao virar o cartão, avaliar o desempenho ou fechar a revisão.",
-            "📱 <b>Nativo & Offline:</b> Utiliza a voz sintética do próprio dispositivo, garantindo privacidade, zero consumo de dados e funcionamento total sem internet."
-        ]
-    },
-    {
-        version: "1.2.1",
-        date: "2025-12-26",
-        title: "Sincronia & Robustez",
-        changes: [
-            "💾 <b>Memória Permanente:</b> As configurações de ritmo (Intenso/Equilibrado/Leve) agora são salvas e restauradas da nuvem corretamente.",
-            "🔥 <b>Streak Real:</b> Correção no contador de dias consecutivos. A contagem agora é enviada para o servidor instantaneamente ao ser atualizada.",
-            "☁️ <b>Sync Unificado:</b> Otimização profunda na comunicação com o banco de dados. Perfil, estatísticas e versículos são baixados em um único pacote sincronizado."
-        ]
-    },
-    {
-        version: "1.2.0",
-        date: "2025-12-25",
-        title: "Profissionalização & UX Limpa",
-        changes: [
-            "✨ <b>Interface Focada:</b> O formulário de cadastro agora fica recolhido em um painel 'Accordion', reduzindo a poluição visual.",
-            "🎨 <b>Design System Sóbrio:</b> Substituição completa de emojis por ícones vetoriais (SVG) finos e elegantes em todo o sistema.",
-            "🛡️ <b>Feedbacks Profissionais:</b> Mensagens de sistema (Toasts) com linguagem visual técnica.",
-            "⚙️ <b>Fluxo de Edição:</b> O painel de cadastro se expande automaticamente ao editar um versículo."
-        ]
-    },
-    {
-        version: "1.1.9",
-        date: "2025-12-25",
-        title: "UX Premium & Sync Robusto",
-        changes: [
-            "🎨 <b>Visual Refinado:</b> Redesign total das janelas de 'Minha Conta' e 'Ritmo'.",
-            "🆔 <b>Identidade:</b> Novo painel com avatar visual e destaque para status de login.",
-            "👆 <b>Seleção Tátil:</b> Opções de ritmo agora são botões grandes e interativos.",
-            "☁️ <b>Fila Offline:</b> Mecanismo de 'Sync Queue' implementado para salvar dados sem internet."
-        ]
-    },
-    {
-        version: "1.1.8",
-        date: "2025-12-25",
-        title: "Correções de Nuvem & UI",
-        changes: [
-            "☁️ <b>Sync Robusto:</b> Interações salvam progresso automaticamente no Firebase.",
-            "🎨 <b>Visual Clean:</b> Tela de carregamento mais leve.",
-            "⚙️ <b>Validação:</b> Auditoria no salvamento de perfil de ritmo."
-        ]
-    },
-    {
-        version: "1.1.7",
-        date: "2025-12-24",
-        title: "Fluxo de Decisão",
-        changes: [
-            "🔀 <b>Decisão Bifurcada:</b> Escolha explícita entre ver a Explicação ou Avançar na tela da Mnemônica.",
-            "🛡️ <b>Proteção de Treino:</b> Ocultação estratégica da resposta completa nas etapas iniciais.",
-            "✨ <b>UX:</b> Botões de ação mais claros e contextuais."
-        ]
-    },
-    {
-        version: "1.1.6",
-        date: "2025-12-23",
-        title: "Fluidez & Arquitetura",
-        changes: [
-            "🏗️ <b>Arquitetura Modular:</b> Reconstrução total do sistema em módulos ES6.",
-            "⚡ <b>Fluxo Ágil:</b> Opção de pular a explicação da mnemônica.",
-            "🌫️ <b>Transições Suaves:</b> Animações visuais no flashcard."
-        ]
-    },
-    {
-        version: "1.1.5",
-        date: "2025-12-22",
-        title: "Edição Completa",
-        changes: ["Modo de edição e correções de layout."]
     }
 ];
 
