@@ -233,9 +233,10 @@
 }
 
 /* Variantes de Painel */
+/* [ATUALIZADO v1.3.4] Identidade de Alerta (Vermelho) */
 .overdue-variant {
-    border: 1.5px solid #3498db !important; /* Destaque Azulado */
-    background: linear-gradient(135deg, var(--white) 0%, #ebf5fb 100%) !important;
+    border: 1.5px solid #c0392b !important; /* Borda Vermelha */
+    background: linear-gradient(135deg, var(--white) 0%, #f9ebea 100%) !important; /* Fundo avermelhado suave */
     margin-bottom: 25px;
 }
 .mission-variant {
