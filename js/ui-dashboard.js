@@ -88,7 +88,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER (REESTRUTURADO v1.3.2) ---
+// --- DASHBOARD RENDER (REESTRUTURADO v1.3.4) ---
 export function renderDashboard() {
     const todayDash = document.getElementById('todayDashboard');
     const todayList = document.getElementById('todayList');
@@ -107,16 +107,26 @@ export function renderDashboard() {
     
     let maxDelayDays = 0;
 
-    // 1. Processamento de Atrasados
+    // 1. Processamento de Atrasados (Lógica Corrigida v1.3.4)
     const overdueVerses = appData.verses.filter(v => {
+        // Verifica se existem datas no passado estrito (menores que hoje)
         const pastDates = v.dates.filter(d => d < todayStr);
         if (pastDates.length === 0) return false;
 
         const lastInt = v.lastInteraction || '0000-00-00';
+        
+        // Verifica prazos não cumpridos no passado
         const unmetDeadlines = pastDates.filter(scheduledDate => scheduledDate > lastInt);
-        const isRecoveredToday = (v.lastInteraction === todayStr);
+        
+        // Lógica de "Recuperado Hoje":
+        // Só consideramos recuperado se ele tinha pendência antiga (pastDates > 0)
+        // E NÃO tem agendamento para hoje (v.dates não inclui todayStr).
+        // Isso evita que a "Missão de Hoje" pule para "Atrasados" quando feita.
+        const isScheduledForToday = v.dates.includes(todayStr);
+        const isRecoveredLegacy = (v.lastInteraction === todayStr) && !isScheduledForToday;
 
-        if (unmetDeadlines.length > 0 || isRecoveredToday) {
+        if (unmetDeadlines.length > 0 || isRecoveredLegacy) {
+            // Define qual data exibir (a mais antiga pendente ou a última passada)
             const referenceDateStr = unmetDeadlines.length > 0 ? unmetDeadlines[0] : pastDates[pastDates.length - 1];
             const missedDateObj = new Date(referenceDateStr + 'T00:00:00');
             const diffTime = Math.abs(todayDateObj - missedDateObj);
@@ -126,7 +136,7 @@ export function renderDashboard() {
 
             v._displayMissedDate = referenceDateStr.split('-').reverse().join('/');
             v._displayDelayDays = diffDays;
-            v._isRecoveredToday = isRecoveredToday;
+            v._isRecoveredToday = (unmetDeadlines.length === 0 && isRecoveredLegacy); // Status visual
             return true;
         }
         return false;
@@ -145,7 +155,7 @@ export function renderDashboard() {
     // 3. Processamento de Versículos de Hoje
     const todayVerses = appData.verses.filter(v => v.dates.includes(todayStr));
 
-    // --- RENDER PAINEL ATRASADOS ---
+    // --- RENDER PAINEL ATRASADOS (Cor Vermelha de Alerta) ---
     if (overdueVerses.length > 0 && overduePanel) {
         overduePanel.style.display = 'block';
         if(overdueCount) overdueCount.innerText = overdueVerses.length;
@@ -161,7 +171,8 @@ export function renderDashboard() {
                 const hasBadge = count > 0;
                 
                 const itemClass = `dash-item ${v._isRecoveredToday ? 'overdue-completed' : ''} ${hasBadge ? 'has-badge' : ''}`;
-                const borderColor = v._isRecoveredToday ? '#27ae60' : '#2980b9';
+                // IDENTIDADE VISUAL VERMELHA (Alerta)
+                const borderColor = v._isRecoveredToday ? '#27ae60' : '#c0392b';
                 const statusTextColor = v._isRecoveredToday ? '#27ae60' : '#c0392b';
 
                 let badgeHTML = '';
