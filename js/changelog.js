@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.3.2",
+        date: "2026-01-05",
+        title: "Padronização Visual & Feedback de Recuperação",
+        changes: [
+            "🎨 <b>Coerência Visual:</b> Os cartões da 'Missão de Hoje' agora possuem bordas laterais coloridas (Azul para pendente, Verde para concluído), unificando a identidade visual com o painel de atrasados.",
+            "🔢 <b>Contador de Recuperação:</b> O badge de interações (bolinha com o número de repetições) foi ativado para os versículos Atrasados. Agora você vê claramente seu esforço de 'Reforço Ativo'.",
+            "🚨 <b>Alerta Persistente:</b> O texto 'Reforço Ativo' agora é exibido em vermelho, lembrando que o item, mesmo revisado hoje, ainda faz parte da dívida técnica de memória."
+        ]
+    },
+    {
         version: "1.3.1",
         date: "2026-01-05",
         title: "Reforço Ativo & Inteligência de Atrasos",
