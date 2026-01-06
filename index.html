@@ -113,6 +113,21 @@
         }
         .l-icon { font-size: 1.1rem; }
         .legend-item small { color: var(--accent); margin-left: auto; font-weight: bold; }
+
+        /* NOVAS CLASSES DE VARIANTES DE PAINEL v1.3.2 */
+        .overdue-variant {
+            border: 1.5px solid #3498db !important; /* Borda Azulada solicitada */
+            background: linear-gradient(135deg, var(--white) 0%, #ebf5fb 100%) !important;
+            margin-bottom: 25px;
+        }
+        .mission-variant {
+            border: 1px solid var(--accent);
+            margin-bottom: 25px;
+        }
+        /* Ajuste de espaçamento para o Badge de Interação */
+        .dash-item.has-badge {
+            padding-right: 52px !important;
+        }
     </style>
 
     <link rel="manifest" href="manifest.json">
@@ -150,20 +165,18 @@
         
         <div class="top-controls">
             <div class="version-pill" onclick="window.openChangelog()" title="Ver novidades">
-                <span id="currentVersion">v1.2.9</span>
+                <span id="currentVersion">v1.3.2</span>
             </div>
 
             <div class="separator"></div>
 
             <div class="pacing-wrapper">
-                <!-- V1.2.9: Badge de Gamificação Minimalista (Abre Modal de Jornada) -->
                 <div id="levelBadge" class="level-pill" onclick="window.openGamificationModal()" title="Ver minha jornada">
                     <span id="lvlIcon">🌱</span>
                 </div>
 
                 <div id="activePlanIcon" class="plan-indicator"></div>
                 
-                <!-- Badge de Atraso (Relógio) -->
                 <div id="delayBadge" class="delay-badge" style="display: none;" title="Dias de atraso acumulado">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span id="delayCount">0d</span>
@@ -192,18 +205,19 @@
         </div>
     </header>
 
-    <div id="todayDashboard" class="dashboard-panel" style="display:none;">
-        <div id="overduePanel" style="display: none; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px dashed #e74c3c;">
-            <div class="dash-header" style="color: #c0392b;">
-                <div>
-                    <h2 style="color: #c0392b;">Atrasados</h2>
-                    <small style="color: #e74c3c;">Recupere estes versículos primeiro!</small>
-                </div>
-                <div class="dash-count" id="overdueCount" style="background: #c0392b;">0</div>
+    <!-- PAINÉIS DE DASHBOARD SEPARADOS v1.3.2 -->
+    <div id="overduePanel" class="dashboard-panel overdue-variant" style="display: none;">
+        <div class="dash-header">
+            <div style="color: #2980b9;">
+                <h2 style="color: #2980b9;">Atrasados</h2>
+                <small style="color: #3498db;">Recupere estes versículos primeiro!</small>
             </div>
-            <div id="overdueList" class="dash-list"></div>
+            <div class="dash-count" id="overdueCount" style="background: #2980b9;">0</div>
         </div>
+        <div id="overdueList" class="dash-list"></div>
+    </div>
 
+    <div id="todayDashboard" class="dashboard-panel mission-variant" style="display:none;">
         <div class="dash-header">
             <div>
                 <h2>Sua Missão de Hoje</h2>
@@ -212,10 +226,8 @@
             <div class="dash-count" id="todayCount">0</div>
         </div>
         <div id="todayList" class="dash-list"></div>
-        <hr class="separator-line" style="border: 0; border-top: 1px dashed var(--border); margin: 20px 0;">
     </div>
 
-    <!-- ÁREA DE CADASTRO ENVELOPADA (NOVA ESTRUTURA) -->
     <div class="input-section collapsed" id="inputSection">
         <div class="input-header" onclick="window.toggleInputSection()">
             <div class="header-left">
@@ -275,7 +287,6 @@
             </div>
         </div>
     </div>
-    <!-- FIM DA ÁREA DE CADASTRO -->
 
     <div class="history-section collapsed" id="historySection">
         <div class="history-header" onclick="window.toggleHistory()">
@@ -385,19 +396,15 @@
                         <h2 id="cardRefBack">...</h2>
                         <p id="cardFullText">...</p>
                         
-                        <!-- ÁREA DE ÁUDIO -->
                         <div class="audio-controls-wrapper">
                             <button id="btnAudioToggle" class="btn-audio" onclick="event.stopPropagation(); window.toggleAudio()" title="Ouvir Versículo">
                                 <span id="iconContainer" style="display: flex; align-items: center;">
-                                    <!-- Ícone Speaker (Volume) -->
                                     <svg id="iconSpeaker" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                    <!-- Ícone Stop (Quadrado) -->
                                     <svg id="iconStop" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="14" height="16" rx="2" ry="2"/></svg>
                                 </span>
                                 <span id="labelAudio" style="margin-left: 8px;">Ouvir Versículo</span>
                             </button>
                         </div>
-                        <!-- FIM DA ÁREA DE ÁUDIO -->
 
                         <div class="feedback-actions">
                             <button class="btn-feedback hard" onclick="event.stopPropagation(); window.handleDifficulty('hard')">
@@ -458,7 +465,6 @@
     </div>
 </div>
 
-<!-- NOVO MODAL DE GAMIFICAÇÃO v1.2.9 -->
 <div id="gamificationModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div class="modal-header-styled">
@@ -466,7 +472,6 @@
             <button class="close-modal-styled" onclick="window.closeGamificationModal()">×</button>
         </div>
 
-        <!-- Barra de Progresso (Movida para cá) -->
         <div class="xp-container" style="margin-bottom: 25px;">
             <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:8px; font-weight:bold; color:var(--primary);">
                 <span id="xpCurrentDisplay">0 XP</span>
@@ -480,7 +485,6 @@
             </small>
         </div>
 
-        <!-- Legenda de Níveis -->
         <div class="level-legend-box">
             <h4>Próximos Passos</h4>
             <div class="legend-grid">
@@ -516,7 +520,6 @@
                     <span class="profile-label">Conectado como:</span>
                     <h3 id="userEmailDisplay" class="profile-email">...</h3>
                     <div class="profile-badge">Membro NeuroBible</div>
-                    <!-- XP BAR REMOVIDA DAQUI (Agora está no GamificationModal) -->
                 </div>
             </div>
             <button class="btn-logout-styled" onclick="window.handleLogout()">
@@ -548,13 +551,10 @@
 
 <div id="toastBox" class="toast-box"></div>
 
-<!-- Dependências Externas -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase.js"></script>
-
-<!-- NOVO PONTO DE ENTRADA MODULAR -->
 <script type="module" src="js/main.js"></script>
 
 </body>
