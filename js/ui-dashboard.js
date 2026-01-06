@@ -91,7 +91,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER ---
+// --- DASHBOARD RENDER (ATUALIZADO PRIORIDADE 1) ---
 export function renderDashboard() {
     const dash = document.getElementById('todayDashboard');
     const list = document.getElementById('todayList');
@@ -151,7 +151,7 @@ export function renderDashboard() {
     const todayVerses = appData.verses.filter(v => v.dates.includes(todayStr));
     dash.style.display = 'block';
 
-    // 3. Renderiza Atrasados
+    // 3. Renderiza Atrasados (COM MELHORIAS VISUAIS)
     if (overdueVerses.length > 0 && overduePanel) {
         overduePanel.style.display = 'block';
         if(overdueCount) overdueCount.innerText = overdueVerses.length;
@@ -168,12 +168,25 @@ export function renderDashboard() {
                 const statusBadge = v._isRecoveredToday ? 
                     `<div style="display:flex; align-items:center; color:#27ae60; font-size:0.8rem; font-weight:bold;">${checkIcon} Recuperado</div>` :
                     `<div style="display:flex; align-items:center; color:#c0392b; font-size:0.8rem; font-weight:bold;">${overdueIcon} Recuperar</div>`;
+                
+                // MELHORIA: Cor fixa vermelha para alertar, mesmo se recuperado
+                const statusTextColor = '#c0392b';
+
+                // MELHORIA: Badge de Interação nos Atrasados
+                const count = v.interactionCount || 0;
+                let badgeHTML = '';
+                if (count > 0) {
+                    let badgeClass = 'interaction-badge';
+                    if (count >= 10) badgeClass += ' purple'; 
+                    else if (count >= 5) badgeClass += ' gold';   
+                    badgeHTML = `<div class="${badgeClass}" title="${count} interações de recuperação">${count}</div>`;
+                }
 
                 return `
-                    <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor}; flex-direction: column; align-items: flex-start;">
+                    <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor}; flex-direction: column; align-items: flex-start; position: relative;">
                         <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                             <strong>${v.ref}</strong>
-                            <small style="color:${v._isRecoveredToday ? '#27ae60' : '#c0392b'}; font-weight:bold;">${v._isRecoveredToday ? 'Reforço Ativo' : '-' + v._displayDelayDays + ' dias'}</small>
+                            <small style="color:${statusTextColor}; font-weight:bold;">${v._isRecoveredToday ? 'Reforço Ativo' : '-' + v._displayDelayDays + ' dias'}</small>
                         </div>
                         
                         <div style="display:flex; align-items:center; width:100%; margin-top:8px;">
@@ -184,6 +197,7 @@ export function renderDashboard() {
                                 ${statusBadge}
                             </div>
                         </div>
+                        ${badgeHTML}
                     </div>
                 `;
             }).join('');
@@ -192,7 +206,7 @@ export function renderDashboard() {
         overduePanel.style.display = 'none';
     }
 
-    // Renderiza Hoje
+    // Renderiza Hoje (COM BORDA LATERAL PADRONIZADA)
     countEl.innerText = todayVerses.length;
     
     if(todayVerses.length === 0) {
@@ -208,6 +222,8 @@ export function renderDashboard() {
             
             let itemClass = 'dash-item';
             let statusIcon = `<small style="color:var(--accent)">▶ Treinar</small>`;
+            // MELHORIA: Define cor da borda (Azul = Pendente, Verde = Feito)
+            const borderColor = isDone ? '#2ecc71' : 'var(--accent)';
 
             if (isDone) {
                 itemClass = 'dash-item completed'; 
@@ -223,8 +239,9 @@ export function renderDashboard() {
                 badgeHTML = `<div class="${badgeClass}" title="${count} interações hoje">${count}</div>`;
             }
 
+            // Aplicada a borda-left no estilo inline
             return `
-            <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})">
+            <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor};">
                 <strong>${v.ref}</strong>
                 ${statusIcon}
                 ${badgeHTML}
