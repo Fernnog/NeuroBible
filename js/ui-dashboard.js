@@ -88,7 +88,7 @@ export function updateRadar() {
     }
 }
 
-// --- DASHBOARD RENDER (REESTRUTURADO v1.3.4) ---
+// --- DASHBOARD RENDER (ATUALIZADO PARA RESGATE TÁTICO) ---
 export function renderDashboard() {
     const todayDash = document.getElementById('todayDashboard');
     const todayList = document.getElementById('todayList');
@@ -106,8 +106,9 @@ export function renderDashboard() {
     const todayDateObj = new Date(todayStr + 'T00:00:00');
     
     let maxDelayDays = 0;
+    let criticalOverdueCount = 0; // Contador para a lógica de Resgate
 
-    // 1. Processamento de Atrasados (Lógica Corrigida v1.3.4)
+    // 1. Processamento de Atrasados
     const overdueVerses = appData.verses.filter(v => {
         // Verifica se existem datas no passado estrito (menores que hoje)
         const pastDates = v.dates.filter(d => d < todayStr);
@@ -118,21 +119,22 @@ export function renderDashboard() {
         // Verifica prazos não cumpridos no passado
         const unmetDeadlines = pastDates.filter(scheduledDate => scheduledDate > lastInt);
         
-        // Lógica de "Recuperado Hoje":
-        // Só consideramos recuperado se ele tinha pendência antiga (pastDates > 0)
-        // E NÃO tem agendamento para hoje (v.dates não inclui todayStr).
-        // Isso evita que a "Missão de Hoje" pule para "Atrasados" quando feita.
         const isScheduledForToday = v.dates.includes(todayStr);
         const isRecoveredLegacy = (v.lastInteraction === todayStr) && !isScheduledForToday;
 
         if (unmetDeadlines.length > 0 || isRecoveredLegacy) {
-            // Define qual data exibir (a mais antiga pendente ou a última passada)
+            // Define qual data exibir
             const referenceDateStr = unmetDeadlines.length > 0 ? unmetDeadlines[0] : pastDates[pastDates.length - 1];
             const missedDateObj = new Date(referenceDateStr + 'T00:00:00');
             const diffTime = Math.abs(todayDateObj - missedDateObj);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             if (diffDays > maxDelayDays) maxDelayDays = diffDays;
+
+            // [LÓGICA RESGATE] Conta itens com mais de 3 dias de atraso não recuperados hoje
+            if (diffDays > 3 && !isRecoveredLegacy) {
+                criticalOverdueCount++;
+            }
 
             v._displayMissedDate = referenceDateStr.split('-').reverse().join('/');
             v._displayDelayDays = diffDays;
@@ -158,20 +160,42 @@ export function renderDashboard() {
     // --- RENDER PAINEL ATRASADOS (Cor Vermelha de Alerta) ---
     if (overdueVerses.length > 0 && overduePanel) {
         overduePanel.style.display = 'block';
-        if(overdueCount) overdueCount.innerText = overdueVerses.length;
         
+        // --- INJEÇÃO DO BOTÃO DE RESGATE (PRIORIDADE 1) ---
+        // Condição: Mais de 3 itens atrasados E mais de 3 itens críticos (>3 dias)
+        let headerActionsHTML = `<div class="dash-count" id="overdueCount" style="background: #c0392b;">${overdueVerses.length}</div>`;
+        
+        if (overdueVerses.length > 3 && criticalOverdueCount > 3) {
+            headerActionsHTML = `
+                <div class="rescue-header-actions" style="display:flex; gap:10px; align-items:center;">
+                    <button class="btn-rescue" onclick="window.openRescueModal()" title="Redistribuir atrasos críticos nos próximos dias livres">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 2v6h6M21.5 22v-6h-6"/><path d="M22 11.5A10 10 0 0 0 3.2 7.2M2 12.5a10 10 0 0 0 18.8 4.2"/></svg>
+                        Reiniciar Ciclo
+                    </button>
+                    <div class="dash-count" id="overdueCount" style="background: #c0392b;">${overdueVerses.length}</div>
+                </div>
+            `;
+        }
+
+        // Atualiza o Header
+        overduePanel.querySelector('.dash-header').innerHTML = `
+            <div style="color: #c0392b;">
+                <h2 style="color: #c0392b;">Atrasados</h2>
+                <small style="color: #e74c3c; font-weight: bold;">Recupere estes versículos primeiro!</small>
+            </div>
+            ${headerActionsHTML}
+        `;
+
         const overdueIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
         const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
         const calendarIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 
         if(overdueList) {
             overdueList.innerHTML = overdueVerses.map(v => {
-                // RESET VISUAL: Contador só aparece se a interação foi HOJE
                 const count = v.lastInteraction === todayStr ? (v.interactionCount || 0) : 0;
                 const hasBadge = count > 0;
                 
                 const itemClass = `dash-item ${v._isRecoveredToday ? 'overdue-completed' : ''} ${hasBadge ? 'has-badge' : ''}`;
-                // IDENTIDADE VISUAL VERMELHA (Alerta)
                 const borderColor = v._isRecoveredToday ? '#27ae60' : '#c0392b';
                 const statusTextColor = v._isRecoveredToday ? '#27ae60' : '#c0392b';
 
@@ -216,7 +240,7 @@ export function renderDashboard() {
     } else {
         todayList.innerHTML = todayVerses.map(v => {
             const isDone = v.lastInteraction === todayStr;
-            const count = isDone ? (v.interactionCount || 0) : 0; // Reset visual diário
+            const count = isDone ? (v.interactionCount || 0) : 0; 
             const hasBadge = count > 0;
             
             let itemClass = `dash-item ${isDone ? 'completed' : ''} ${hasBadge ? 'has-badge' : ''}`;
@@ -242,6 +266,105 @@ export function renderDashboard() {
             </div>
             `;
         }).join('');
+    }
+}
+
+// --- LÓGICA DE RESGATE TÁTICO (PRIORIDADES 1, 2 e 3) ---
+
+// Injeção do HTML do Modal no DOM se não existir (Prioridade 3)
+function createRescueModal() {
+    if (document.getElementById('rescueModal')) return;
+
+    const modalHTML = `
+        <div id="rescueModal" class="modal-overlay" style="display:none; z-index:9999;">
+            <div class="modal-content">
+                <div class="modal-header-styled">
+                    <h3 style="color:#e67e22; display:flex; align-items:center; gap:10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 2v6h6M21.5 22v-6h-6"/><path d="M22 11.5A10 10 0 0 0 3.2 7.2M2 12.5a10 10 0 0 0 18.8 4.2"/></svg>
+                        Resgate Tático
+                    </h3>
+                    <button class="close-modal-styled" onclick="window.closeRescueModal()">×</button>
+                </div>
+                <p style="color:var(--text); line-height:1.5;">Detectamos que você tem muitos versículos acumulados. Tentar fazer tudo hoje pode ser exaustivo.</p>
+                
+                <div style="background:var(--hover-bg); padding:15px; border-radius:8px; border:1px solid var(--border); margin:15px 0;">
+                    <strong style="color:var(--primary); display:block; margin-bottom:8px;">Esta operação irá:</strong>
+                    <ul style="text-align:left; margin:0; padding-left:20px; color:var(--text); font-size:0.95rem;">
+                        <li style="margin-bottom:5px;">🛑 Zerar o ciclo dos versículos criticamente atrasados.</li>
+                        <li style="margin-bottom:5px;">📅 Reagendá-los gradualmente para os próximos dias livres.</li>
+                        <li>✨ Dar um novo começo para sua mente.</li>
+                    </ul>
+                </div>
+
+                <p style="font-size:0.85rem; opacity:0.8; font-style:italic;">Isso não apaga seu histórico, apenas reorganiza sua agenda futura.</p>
+
+                <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                    <button class="btn-ghost-danger" onclick="window.closeRescueModal()">Cancelar</button>
+                    <button class="btn-main" style="background: linear-gradient(135deg, #f39c12 0%, #d35400 100%); width:auto; border:none;" onclick="window.confirmRescue()">Confirmar Resgate</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// Funções expostas para o main.js
+export function openRescueModal() {
+    createRescueModal();
+    document.getElementById('rescueModal').style.display = 'flex';
+}
+
+export function closeRescueModal() {
+    const modal = document.getElementById('rescueModal');
+    if (modal) modal.style.display = 'none';
+}
+
+export function confirmRescue() {
+    const todayStr = getLocalDateISO(new Date());
+    let processedCount = 0;
+
+    // Começamos a procurar vagas a partir de AMANHÃ para não entupir hoje (Prioridade 2)
+    const startSearchDate = new Date();
+    startSearchDate.setDate(startSearchDate.getDate() + 1);
+    const startSearchISO = getLocalDateISO(startSearchDate);
+
+    appData.verses.forEach(v => {
+        // Verifica atraso
+        const pastDates = v.dates.filter(d => d < todayStr);
+        const lastInt = v.lastInteraction || '0000-00-00';
+        const isPending = pastDates.some(d => d > lastInt);
+        const isDoneToday = v.lastInteraction === todayStr;
+
+        // Se está pendente e não foi feito hoje, entra no resgate
+        if (isPending && !isDoneToday) {
+            // 1. Encontra o próximo dia "leve" (usando a lógica do srs-engine)
+            // Isso garante que não vamos criar novos gargalos (Prioridade 2)
+            const newStartDate = findNextLightDay(startSearchISO, appData);
+            
+            // 2. Reinicia o ciclo para esse novo dia
+            v.startDate = newStartDate;
+            v.dates = calculateSRSDates(newStartDate); // Recalcula [0, 1, 3, 7...] a partir da nova data
+            v.lastInteraction = null; // Reseta interações pois é um "novo começo"
+            v.interactionCount = 0;
+            
+            processedCount++;
+        }
+    });
+
+    closeRescueModal();
+
+    if (processedCount > 0) {
+        saveToStorage();
+        if (window.saveVerseToFirestore) {
+            // Salva contexto e dispara sync (Simplificado)
+            appData.verses.forEach(v => window.saveVerseToFirestore(v, true, 'Rescue_Op'));
+        }
+        
+        window.updateRadar();
+        renderDashboard();
+        showToast(`Resgate concluído! ${processedCount} versículos reorganizados.`, "success");
+    } else {
+        showToast("Nenhum versículo elegível para resgate.", "warning");
     }
 }
 
