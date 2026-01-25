@@ -45,6 +45,9 @@ window.clearData = uiDashboard.clearData;
 window.confirmSmartReschedule = uiDashboard.confirmSmartReschedule;
 window.closeConflictModal = uiDashboard.closeConflictModal;
 
+// NOVA FUNÇÃO (Resgate Tático)
+window.handleRescueOperation = uiDashboard.handleRescueOperation;
+
 // Funções de Flashcard (Treino)
 window.openDailyReview = flashcardLogic.openDailyReview;
 window.startFlashcard = flashcardLogic.startFlashcard;
