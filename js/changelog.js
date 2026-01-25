@@ -2,6 +2,17 @@
 
 export const systemChangelog = [
     {
+        version: "1.3.4",
+        date: "2026-01-06",
+        title: "Resgate Tático & Alerta Crítico",
+        changes: [
+            "🆘 <b>Resgate Tático:</b> Nova ferramenta de emergência. Ao detectar sobrecarga crítica (muitos itens com atraso longo), o sistema oferece um botão para redistribuir inteligentemente esses versículos em dias futuros livres.",
+            "🎨 <b>Identidade de Alerta:</b> O painel de 'Atrasados' recebeu um tratamento visual exclusivo (fundo avermelhado e bordas de alerta) para diferenciar claramente a dívida técnica da missão diária.",
+            "🧠 <b>Gestão de Frustração:</b> Implementação de lógica para evitar a 'Falência de Revisão'. O sistema agora prioriza o recomeço do ciclo em vez de forçar o acúmulo infinito de tarefas atrasadas.",
+            "📅 <b>Chips de Data:</b> Visualização aprimorada nos cards de atraso, mostrando exatamente quantos dias o versículo está pendente e a data original que foi perdida."
+        ]
+    },
+    {
         version: "1.3.3",
         date: "2026-01-05",
         title: "Arquitetura de Painéis & Reset de Fluxo",
