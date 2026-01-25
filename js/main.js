@@ -14,6 +14,9 @@ import * as srsEngine from './srs-engine.js';
 
 // --- 3. EXPOSIÇÃO GLOBAL (PONTE PARA O HTML) ---
 
+// [CORREÇÃO HOTFIX] Expondo showToast para o firebase.js e outros módulos globais
+window.showToast = showToast;
+
 // Funções de UI e Dashboard
 window.openPlanModal = uiDashboard.openPlanModal;
 window.closePlanModal = uiDashboard.closePlanModal;
@@ -34,6 +37,9 @@ window.closeGamificationModal = uiDashboard.closeGamificationModal;
 // NOVA FUNÇÃO v1.2.0: Toggle do Painel de Cadastro
 window.toggleInputSection = uiDashboard.toggleInputSection;
 
+// [NOVO] Exposição da função de Resgate Tático (Correção do nome da função)
+window.handleRescueOperation = uiDashboard.handleRescueOperation;
+
 // Funções de CRUD e Processamento
 window.processAndGenerate = uiDashboard.processAndGenerate; 
 window.startEdit = uiDashboard.startEdit;
@@ -44,9 +50,6 @@ window.handleUndo = uiDashboard.handleUndo;
 window.clearData = uiDashboard.clearData;
 window.confirmSmartReschedule = uiDashboard.confirmSmartReschedule;
 window.closeConflictModal = uiDashboard.closeConflictModal;
-
-// NOVA FUNÇÃO (Resgate Tático)
-window.handleRescueOperation = uiDashboard.handleRescueOperation;
 
 // Funções de Flashcard (Treino)
 window.openDailyReview = flashcardLogic.openDailyReview;
