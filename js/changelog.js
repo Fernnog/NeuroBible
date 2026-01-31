@@ -2,6 +2,17 @@
 
 export const systemChangelog = [
     {
+        version: "1.3.5",
+        date: "2026-01-31",
+        title: "Resgate Gradual & Distribuição de Fluxo",
+        changes: [
+            "⚖️ <b>Distribuidor de Fluxo:</b> O Resgate Tático evoluiu de uma transferência simples para uma redistribuição inteligente, 'parcelando' os atrasos nos próximos dias livres para evitar o efeito funil.",
+            "📡 <b>Live Load Map:</b> Implementação de mapeamento de carga em tempo real que identifica janelas de oportunidade na agenda antes de alocar um versículo.",
+            "🛡️ <b>Limite de Carga Cognitiva:</b> Introdução de um teto de segurança (5 itens/dia) durante o processo de resgate, garantindo que o retorno aos estudos seja suave e sem sobrecarga.",
+            "✅ <b>Feedback de Alívio:</b> Atualização das notificações do sistema para confirmar a reorganização bem-sucedida e equilibrada do cronograma."
+        ]
+    },
+    {
         version: "1.3.4",
         date: "2026-01-06",
         title: "Resgate Tático & Alerta Crítico",
