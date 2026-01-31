@@ -280,50 +280,92 @@ export function renderDashboard() {
     }
 }
 
-// [NOVO] FUNÇÃO: Lógica de Redistribuição (Resgate Tático)
+// [NOVO] FUNÇÃO: Lógica de Redistribuição Inteligente (Resgate Gradual)
 export function handleRescueOperation() {
-    if (!confirm("O Resgate Tático irá reiniciar o ciclo de TODOS os versículos atrasados críticos e agendá-los para os próximos dias livres, evitando sobrecarga. Deseja continuar?")) return;
+    // 1. Confirmação do Usuário
+    if (!confirm("O Resgate Tático irá redistribuir seus atrasos GRADUALMENTE nos próximos dias livres para evitar sobrecarga. Deseja continuar?")) return;
 
     const todayStr = getLocalDateISO(new Date());
     let processedCount = 0;
 
-    // Começamos a procurar vagas a partir de AMANHÃ para não entupir hoje
-    const startSearchDate = new Date();
-    startSearchDate.setDate(startSearchDate.getDate() + 1);
-    const startSearchISO = getLocalDateISO(startSearchDate);
-
+    // 2. Preparação do Mapa de Carga em Tempo Real
+    // Criamos um mapa local para saber quantos agendamentos JÁ existem em cada dia
+    const liveLoadMap = {};
     appData.verses.forEach(v => {
-        // Verifica atraso
+        v.dates.forEach(d => {
+            liveLoadMap[d] = (liveLoadMap[d] || 0) + 1;
+        });
+    });
+
+    // Configuração do Cursor de Data (Começa a procurar a partir de AMANHÃ)
+    let searchDateObj = new Date();
+    searchDateObj.setDate(searchDateObj.getDate() + 1);
+
+    // Limite de Segurança (Radar de Carga)
+    const MAX_DAILY_LOAD = 5; 
+
+    // 3. Iteração e Redistribuição Inteligente
+    appData.verses.forEach(v => {
+        // Verifica se é um versículo elegível para resgate (Atrasado pendente)
         const pastDates = v.dates.filter(d => d < todayStr);
         const lastInt = v.lastInteraction || '0000-00-00';
         const isPending = pastDates.some(d => d > lastInt);
         const isDoneToday = v.lastInteraction === todayStr;
 
-        // Se está pendente e não foi feito hoje, entra no resgate
         if (isPending && !isDoneToday) {
-            // 1. Encontra o próximo dia "leve" (usando a lógica do srs-engine)
-            const newStartDate = findNextLightDay(startSearchISO, appData);
+            let slotFound = false;
             
-            // 2. Reinicia o ciclo para esse novo dia
-            v.startDate = newStartDate;
-            v.dates = calculateSRSDates(newStartDate); // Recalcula [0, 1, 3, 7...] a partir da nova data
-            v.lastInteraction = null; // Reseta interações pois é um "novo começo"
-            v.interactionCount = 0;
-            
-            processedCount++;
+            // Loop para encontrar a próxima vaga, dia após dia
+            while (!slotFound) {
+                const isoDate = getLocalDateISO(searchDateObj);
+                const currentLoad = liveLoadMap[isoDate] || 0;
+
+                if (currentLoad < MAX_DAILY_LOAD) {
+                    // --- VAGA ENCONTRADA ---
+                    
+                    // 1. Remove datas antigas do mapa (limpeza virtual)
+                    v.dates.forEach(oldD => {
+                        if(liveLoadMap[oldD]) liveLoadMap[oldD]--;
+                    });
+
+                    // 2. Aplica nova data de início
+                    v.startDate = isoDate;
+                    
+                    // 3. Recalcula ciclo SRS [0, 1, 3, 7...]
+                    v.dates = calculateSRSDates(isoDate);
+                    
+                    // 4. Reseta status de interação (Novo começo)
+                    v.lastInteraction = null;
+                    v.interactionCount = 0;
+
+                    // 5. Atualiza o Mapa de Carga com as NOVAS datas
+                    // Isso garante que o próximo versículo do loop já saiba que este dia encheu
+                    v.dates.forEach(newD => {
+                        liveLoadMap[newD] = (liveLoadMap[newD] || 0) + 1;
+                    });
+
+                    slotFound = true;
+                    processedCount++;
+                } else {
+                    // --- DIA CHEIO ---
+                    // Avança para o dia seguinte e tenta novamente na próxima iteração do while
+                    searchDateObj.setDate(searchDateObj.getDate() + 1);
+                }
+            }
         }
     });
 
+    // 4. Finalização e Persistência
     if (processedCount > 0) {
         saveToStorage();
         if (window.saveVerseToFirestore) {
-            // Salva em lote ou individualmente (simplificado aqui para salvar contexto local e disparar sync)
-            appData.verses.forEach(v => window.saveVerseToFirestore(v, true, 'Rescue_Op'));
+            // Salva em lote simulado através de cada versículo
+            appData.verses.forEach(v => window.saveVerseToFirestore(v, true, 'Rescue_Smart_Dist'));
         }
         
         window.updateRadar();
         renderDashboard();
-        window.showToast(`Resgate concluído! ${processedCount} versículos reorganizados.`, "success");
+        window.showToast(`Alívio Tático: ${processedCount} versículos distribuídos suavemente!`, "success");
     } else {
         window.showToast("Nenhum versículo elegível para resgate.", "warning");
     }
