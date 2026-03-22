@@ -301,8 +301,11 @@ export function handleRescueOperation() {
     let searchDateObj = new Date();
     searchDateObj.setDate(searchDateObj.getDate() + 1);
 
-    // Limite de Segurança (Radar de Carga)
-    const MAX_DAILY_LOAD = 5; 
+    // 1. Busca a carga máxima configurada ou usa o padrão 5
+    const MAX_DAILY_LOAD = appData.settings?.maxDailyLoad || 5; 
+
+    // 2. Aplica o Fator de Carga Segura (70%)
+    const SAFE_LOAD_LIMIT = Math.max(1, Math.floor(MAX_DAILY_LOAD * 0.7)); 
 
     // 3. Iteração e Redistribuição Inteligente
     appData.verses.forEach(v => {
@@ -320,8 +323,9 @@ export function handleRescueOperation() {
                 const isoDate = getLocalDateISO(searchDateObj);
                 const currentLoad = liveLoadMap[isoDate] || 0;
 
-                if (currentLoad < MAX_DAILY_LOAD) {
-                    // --- VAGA ENCONTRADA ---
+                // 3. Usa o limite seguro em vez do limite máximo
+                if (currentLoad < SAFE_LOAD_LIMIT) {
+                    // --- VAGA ENCONTRADA (Com Margem de Segurança) ---
                     
                     // 1. Remove datas antigas do mapa (limpeza virtual)
                     v.dates.forEach(oldD => {
