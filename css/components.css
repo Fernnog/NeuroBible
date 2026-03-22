@@ -632,3 +632,12 @@
     gap: 10px;
     align-items: center;
 }
+
+/* Atualização do botão de resgate tático (Safe Mode) */
+.btn-rescue.safe-mode {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    box-shadow: 0 2px 5px rgba(46, 204, 113, 0.3);
+}
+.btn-rescue.safe-mode:hover {
+    box-shadow: 0 4px 8px rgba(46, 204, 113, 0.4);
+}
