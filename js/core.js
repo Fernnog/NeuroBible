@@ -1,0 +1,134 @@
+// js/core.js
+import { getLocalDateISO } from './utils.js'; // [v1.3.1] Necessário para verificar a data atual e limpeza diária
+
+// --- 1. ESTADO GLOBAL (MODEL) ---
+export let appData = {
+    // v1.3.1: Removidos campos 'mnemonic' e 'explanation' para simplificação do fluxo
+    verses: [], // { id, ref, text, startDate, dates: [], lastInteraction: null, interactionCount: 0 }
+    settings: { 
+        planInterval: 1, // 1=Diário, 2=Alternado, 3=Leve
+        dailyTarget: 2,  // Meta de interações para considerar "Excelência"
+        autoOptimizeSchedule: false // Novo: Flag para realocação automática de revisões em conflito
+    }, 
+    // v1.2.9: Adicionado currentXP para controle de Gamificação
+    stats: { streak: 0, lastLogin: null, currentXP: 0 } 
+};
+
+// Variáveis de Controle de Interface (Estado Volátil)
+export let currentReviewId = { value: null }; // Objeto para manter referência
+export let cardStage = { value: 0 }; // 0: Iniciais, 1: Lacunas (Stage -1 Removido)
+export let editingVerseId = { value: null }; // ID sendo editado
+export let pendingVerseData = { value: null }; // Dados aguardando confirmação (conflito)
+
+// --- 2. MANIPULADORES DE ESTADO (SETTERS) ---
+
+// Atualiza o appData completo (usado pelo Storage)
+export function setAppData(newData) {
+    if (newData.verses) appData.verses = newData.verses;
+    if (newData.settings) appData.settings = newData.settings;
+    if (newData.stats) appData.stats = newData.stats;
+}
+
+// Helpers para atualizar variáveis primitivas exportadas (necessário em ES Modules)
+export function setEditingVerseId(id) { editingVerseId.value = id; }
+export function setPendingVerseData(data) { pendingVerseData.value = data; }
+export function setCurrentReviewId(id) { currentReviewId.value = id; }
+export function setCardStage(val) { cardStage.value = val; }
+
+// --- 3. CRUD LÓGICO (Manipulação de Array) ---
+
+export function addVerseToState(newVerse) {
+    appData.verses.push(newVerse);
+}
+
+export function updateVerseInState(updatedVerse) {
+    const index = appData.verses.findIndex(v => v.id === updatedVerse.id);
+    if (index !== -1) {
+        appData.verses[index] = updatedVerse;
+    }
+}
+
+export function deleteVerseFromState(id) {
+    const index = appData.verses.findIndex(v => v.id === id);
+    if (index !== -1) {
+        const deleted = appData.verses.splice(index, 1);
+        return { index, item: deleted[0] }; // Retorna para possibilitar UNDO
+    }
+    return null;
+}
+
+export function restoreVerseToState(index, item) {
+    appData.verses.splice(index, 0, item);
+}
+
+// --- 4. SANITY CHECK (Validação e Limpeza de Dados) ---
+// Retorna true se houve alteração nos dados (sinalizando necessidade de salvar)
+export function runSanityCheck() {
+    let dataChanged = false;
+    if (!appData.verses) appData.verses = [];
+
+    const todayISO = getLocalDateISO(new Date());
+
+    appData.verses.forEach(v => {
+        // [v1.3.1] LIMPEZA DE ARQUITETURA: Remoção ativa de campos mnemônicos inoperantes
+        if (v.hasOwnProperty('mnemonic')) {
+            delete v.mnemonic;
+            dataChanged = true;
+        }
+        if (v.hasOwnProperty('explanation')) {
+            delete v.explanation;
+            dataChanged = true;
+        }
+
+        // Migração v1.1.4: Garante lastInteraction
+        if (!v.hasOwnProperty('lastInteraction')) {
+            v.lastInteraction = null;
+            dataChanged = true;
+        }
+        
+        // Migração Double Check: Garante contador de interação
+        if (!v.hasOwnProperty('interactionCount')) {
+            v.interactionCount = 0;
+            dataChanged = true;
+        }
+
+        // DAILY CLEANUP LOGIC
+        if (v.lastInteraction && v.lastInteraction !== todayISO && v.interactionCount > 0) {
+            v.interactionCount = 0;
+            dataChanged = true;
+        }
+    });
+
+    // Migração de Configurações
+    if (!appData.settings) {
+        appData.settings = { planInterval: 1, dailyTarget: 2, autoOptimizeSchedule: false };
+        dataChanged = true;
+    } else {
+        if (!appData.settings.hasOwnProperty('dailyTarget')) {
+            appData.settings.dailyTarget = 2;
+            dataChanged = true;
+        }
+        // Migração Nova: Garante flag de auto-otimização
+        if (!appData.settings.hasOwnProperty('autoOptimizeSchedule')) {
+            appData.settings.autoOptimizeSchedule = false;
+            dataChanged = true;
+        }
+    }
+
+    // Migração de Stats (Gamificação)
+    if (!appData.stats) {
+        appData.stats = { streak: 0, lastLogin: null, currentXP: 0 };
+        dataChanged = true;
+    } else {
+        if (!appData.stats.hasOwnProperty('currentXP')) {
+            appData.stats.currentXP = 0;
+            dataChanged = true;
+        }
+    }
+
+    if (dataChanged) {
+        console.log('[System] Sanity Check: Limpeza de campos mnemônicos e manutenção de rotina realizadas.');
+    }
+    
+    return dataChanged;
+}
