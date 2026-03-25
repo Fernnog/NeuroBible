@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.4.0",
+        date: "2026-03-25",
+        title: "Histórico, Ícones PWA e Agendamento Inteligente",
+        changes: [
+            "📜 <b>Histórico Dinâmico:</b> Conexão dos dados de atualização ao painel de histórico, renderizando as novidades do aplicativo de forma clara e estruturada na interface.",
+            "📱 <b>Otimização PWA (Ícones):</b> Atualização das referências para utilizar um conjunto otimizado de ícones em resoluções exatas (Android, iOS e Web), garantindo uma aparência 100% nativa na instalação.",
+            "🧠 <b>Agendamento Inteligente Anti-Sobrecarga:</b> Implementação de um algoritmo protetor que, ao detectar carga máxima em um dia, realoca automaticamente a revisão para a próxima data livre, evitando o esgotamento cognitivo."
+        ]
+    },
+    {
         version: "1.3.9",
         date: "2026-03-24",
         title: "Estabilidade de Áudio & Fluxo Inteligente",
