@@ -2,6 +2,16 @@
 
 export const systemChangelog = [
     {
+        version: "1.3.9",
+        date: "2026-03-24",
+        title: "Estabilidade de Áudio & Fluxo Inteligente",
+        changes: [
+            "🛡️ <b>Estabilidade no Mobile:</b> Criação de uma trava de segurança que impede travamentos da tela de revisão causados por pequenas falhas na API de voz do Android.",
+            "⚡ <b>Auto-Fechamento Inteligente:</b> Ao iniciar um treino avulso direto da tela inicial, o aplicativo agora entende o contexto e fecha o painel automaticamente após você acertar.",
+            "✨ <b>Limpeza Dinâmica do Radar:</b> A lista de revisão agora é reativa. Versículos concluídos desaparecem instantaneamente da tela e, ao zerar a sua lista de pendências, o sistema encerra a sessão sozinho."
+        ]
+    },
+    {
         version: "1.3.8",
         date: "2026-03-24",
         title: "Inteligência Preditiva de Sobrecarga",
