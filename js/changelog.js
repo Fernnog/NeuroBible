@@ -2,6 +2,17 @@
 
 export const systemChangelog = [
     {
+        version: "1.3.8",
+        date: "2026-03-24",
+        title: "Inteligência Preditiva de Sobrecarga",
+        changes: [
+            "🔮 <b>Visão de Futuro:</b> O sistema agora mapeia seus próximos dias de estudo e exibe um painel preditivo amigável na tela inicial se detectar que sua agenda está no limite máximo.",
+            "📅 <b>Sugestão de Data Segura:</b> O alerta informa exatamente quantos dias seguidos estão lotados e já calcula a próxima data livre ideal para você voltar a cadastrar novos versículos.",
+            "⚡ <b>Agendamento Expresso:</b> Fricção zero. Ao clicar na data sugerida no alerta preditivo, o sistema abre o cadastro e preenche o calendário automaticamente para você.",
+            "🎨 <b>Identidade Preventiva:</b> Novo padrão visual de alertas (borda e ícone alaranjados), criado especificamente para avisos de prevenção, sem gerar o estresse visual de itens atrasados."
+        ]
+    },
+    {
         version: "1.3.7",
         date: "2026-03-22",
         title: "Readequação Dinâmica de Carga por Perfil",
