@@ -239,11 +239,24 @@
     background: linear-gradient(135deg, var(--white) 0%, #f9ebea 100%) !important; /* Fundo avermelhado suave */
     margin-bottom: 25px;
 }
-.predictive-variant {
-    border: 1.5px solid #e67e22 !important; /* Borda Laranja de Alerta */
-    background: linear-gradient(135deg, var(--white) 0%, #fdf2e9 100%) !important; /* Fundo alaranjado suave */
+
+/* Variantes para o Painel de Feedback Inteligente */
+.favorable-variant {
+    border: 1.5px solid #27ae60 !important;
+    background: linear-gradient(135deg, var(--white) 0%, #f0fdf4 100%) !important;
     margin-bottom: 25px;
 }
+.favorable-variant h2 { color: #27ae60 !important; }
+.favorable-variant small { color: #2ecc71 !important; }
+
+.wait-variant {
+    border: 1.5px solid #f39c12 !important;
+    background: linear-gradient(135deg, var(--white) 0%, #fdf9f1 100%) !important;
+    margin-bottom: 25px;
+}
+.wait-variant h2 { color: #d35400 !important; }
+.wait-variant small { color: #e67e22 !important; }
+
 .mission-variant {
     border: 1px solid var(--accent) !important;
 }
