@@ -258,55 +258,60 @@ export function renderDashboard() {
         }).join('');
     }
 
-    renderPredictiveCard();
+    renderFavorableDayCard();
 }
 
-export function renderPredictiveCard() {
-    const panel = document.getElementById('predictivePanel');
+export function renderFavorableDayCard() {
+    const panel = document.getElementById('favorableDayPanel');
     if (!panel) return;
 
-    const limit = getDynamicLimit(appData); 
+    const limit = getDynamicLimit(appData);
     const loadMap = getCurrentLoadMap();
     
     let currentDate = new Date();
-    let consecutiveFullDays = 0;
-    let nextSafeDateISO = null;
+    let diffDays = 0;
+    let isFavorable = false;
+    let bestDateISO = null;
 
-    for (let i = 0; i < 60; i++) { 
-        const iso = getLocalDateISO(currentDate);
-        const load = loadMap[iso] || 0;
+    for (let i = 0; i < 30; i++) {
+        const testDateISO = getLocalDateISO(currentDate);
+        const projectedDates = calculateSRSDates(testDateISO);
 
-        if (load >= limit) {
-            consecutiveFullDays++;
-        } else {
-            nextSafeDateISO = iso; 
+        const hasConflict = projectedDates.some(d => (loadMap[d] || 0) >= limit);
+
+        if (!hasConflict) {
+            isFavorable = (i === 0);
+            bestDateISO = testDateISO;
             break;
         }
         currentDate.setDate(currentDate.getDate() + 1);
+        diffDays++;
     }
 
-    if (consecutiveFullDays > 0 && nextSafeDateISO) {
-        const [ano, mes, dia] = nextSafeDateISO.split('-');
-        const safeDateStr = `${dia}/${mes}/${ano}`;
+    const titleEl = document.getElementById('favorableDayTitle');
+    const msgEl = document.getElementById('favorableDayMsg');
+    const iconEl = document.getElementById('favorableDayIcon');
 
-        panel.style.display = 'block';
-        panel.innerHTML = `
-            <div class="dash-header" style="margin-bottom: 5px;">
-                <div style="color: #d35400;">
-                    <h2 style="color: #d35400; font-size: 1.1rem; display: flex; align-items: center; gap: 6px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        Previsão de Sobrecarga
-                    </h2>
-                </div>
-            </div>
-            <p style="font-size: 0.9rem; color: var(--text); margin-top: 5px; line-height: 1.4;">
-                Sua agenda já atingiu o limite de revisões por <strong>${consecutiveFullDays} dia(s) consecutivo(s)</strong>. 
-                Para não quebrar o algoritmo e gerar estresse, recomendamos cadastrar novos versículos a partir do dia 
-                <strong style="cursor: pointer; text-decoration: underline; color: #d35400;" title="Clique para agendar para esta data" onclick="window.applySafeDate('${nextSafeDateISO}')">${safeDateStr}</strong>.
-            </p>
-        `;
+    panel.style.display = 'block';
+    panel.className = 'dashboard-panel ' + (isFavorable ? 'favorable-variant' : 'wait-variant');
+
+    if (isFavorable) {
+        titleEl.innerText = "Sinal Verde!";
+        msgEl.innerText = "Hoje é um dia excelente para iniciar um novo versículo.";
+        iconEl.innerHTML = `<svg width="24" height="24" stroke="#27ae60" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
     } else {
-        panel.style.display = 'none';
+        titleEl.innerText = "Momento de Consolidar";
+        
+        let safeDateStr = bestDateISO;
+        if (bestDateISO) {
+            const [ano, mes, dia] = bestDateISO.split('-');
+            safeDateStr = `${dia}/${mes}/${ano}`;
+        }
+
+        msgEl.innerHTML = `Faltam ${diffDays} dia(s) para um novo ciclo ideal. Foque nas revisões! 
+            <br><a href="#" onclick="event.preventDefault(); window.applySafeDate('${bestDateISO}')" style="color: #d35400; text-decoration: underline; font-weight: bold; margin-top: 5px; display: inline-block;">Agendar automaticamente para ${safeDateStr}</a>`;
+        
+        iconEl.innerHTML = `<svg width="24" height="24" stroke="#d35400" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
     }
 }
 
