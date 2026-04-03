@@ -218,9 +218,6 @@
         <div id="overdueList" class="dash-list"></div>
     </div>
 
-    <div id="predictivePanel" class="dashboard-panel predictive-variant" style="display: none;">
-    </div>
-
     <div id="todayDashboard" class="dashboard-panel mission-variant" style="display:none;">
         <div class="dash-header">
             <div>
@@ -230,6 +227,18 @@
             <div class="dash-count" id="todayCount">0</div>
         </div>
         <div id="todayList" class="dash-list"></div>
+    </div>
+
+    <div id="favorableDayPanel" class="dashboard-panel" style="display: none;">
+        <div class="dash-header" style="margin-bottom: 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div id="favorableDayIcon"></div>
+                <div>
+                    <h2 id="favorableDayTitle" style="margin: 0; font-size: 1.1rem;">Análise de Ritmo</h2>
+                    <small id="favorableDayMsg" style="font-weight: 500;">Calculando momento ideal...</small>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="input-section collapsed" id="inputSection">
