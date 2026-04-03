@@ -2,6 +2,17 @@
 
 export const systemChangelog = [
     {
+        version: "1.4.1",
+        date: "2026-04-02",
+        title: "Análise de Ritmo & Prevenção Proativa",
+        changes: [
+            "🚦 <b>Sinal Verde para Estudos:</b> Implementação de um painel inteligente que simula projeções futuras para indicar se hoje é um dia seguro para adicionar novos versículos sem estourar o limite de revisões.",
+            "⏳ <b>Contagem Regressiva Estratégica:</b> Se a agenda estiver lotada, o sistema entra em modo 'Momento de Consolidar', exibindo exatamente quantos dias faltam para a próxima janela ideal e sugerindo foco total nas revisões atuais.",
+            "⚡ <b>Auto-agendamento Expresso:</b> Fricção zero. Adicionado um atalho inteligente que permite agendar automaticamente a inserção de um novo versículo para a próxima data segura projetada pelo algoritmo.",
+            "🧹 <b>Refatoração de Alertas:</b> Remoção e substituição do antigo painel preditivo legado. Toda a inteligência de gestão de saúde da agenda agora está centralizada e aprimorada no novo card de Análise de Ritmo."
+        ]
+    },
+    {
         version: "1.4.0",
         date: "2026-03-25",
         title: "Histórico, Ícones PWA e Agendamento Inteligente",
