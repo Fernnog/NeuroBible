@@ -192,14 +192,14 @@ export function renderDashboard() {
 
                 let badgeHTML = '';
                 if (hasBadge) {
-                    let badgeClass = 'interaction-badge pulse';
+                    let badgeClass = 'interaction-badge pulse-anim';
                     if (count >= 10) badgeClass += ' purple'; 
                     else if (count >= 5) badgeClass += ' gold';   
                     badgeHTML = `<div class="${badgeClass}" title="${count} interações de recuperação hoje">${count}</div>`;
                 }
 
                 return `
-                    <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor}; flex-direction: column; align-items: flex-start; position: relative;">
+                    <div class="${itemClass}" data-id="${v.id}" style="border-left: 4px solid ${borderColor}; flex-direction: column; align-items: flex-start; position: relative;">
                         <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                             <strong>${v.ref}</strong>
                             <small style="color:${statusTextColor}; font-weight:bold;">${v._isRecoveredToday ? 'Recuperado' : '-' + v._displayDelayDays + ' dias'}</small>
@@ -242,14 +242,14 @@ export function renderDashboard() {
 
             let badgeHTML = '';
             if (hasBadge) {
-                let badgeClass = 'interaction-badge pulse';
+                let badgeClass = 'interaction-badge pulse-anim';
                 if (count >= 10) badgeClass += ' purple'; 
                 else if (count >= 5) badgeClass += ' gold';   
                 badgeHTML = `<div class="${badgeClass}" title="${count} interações hoje">${count}</div>`;
             }
 
             return `
-            <div class="${itemClass}" onclick="startFlashcardFromDash(${v.id})" style="border-left: 4px solid ${borderColor}; position: relative;">
+            <div class="${itemClass}" data-id="${v.id}" style="border-left: 4px solid ${borderColor}; position: relative;">
                 <strong>${v.ref}</strong>
                 ${statusIcon}
                 ${badgeHTML}
@@ -259,6 +259,157 @@ export function renderDashboard() {
     }
 
     renderFavorableDayCard();
+    initDashboardInteractions();
+    maybeShowSwipeHint(todayVerses.length + overdueVerses.length);
+}
+
+let lastSwipeTimestamp = 0;
+let swipeHintShownThisSession = false;
+
+function initDashboardInteractions() {
+    const containers = [
+        document.getElementById('todayList'),
+        document.getElementById('overdueList')
+    ];
+
+    const DEADZONE_PX = 10;
+    const SWIPE_THRESHOLD_PX = 75;
+    const MAX_TRANSLATE_PX = 110;
+
+    containers.forEach(container => {
+        if (!container || container.dataset.swipeBound === 'true') return;
+        container.dataset.swipeBound = 'true';
+
+        let activeItem = null;
+        let activePointerId = null;
+        let startX = 0;
+        let startY = 0;
+        let currentDeltaX = 0;
+        let isHorizontalSwipe = null;
+        let hasVibrated = false;
+
+        const resetSwipeVisuals = () => {
+            if (!activeItem) return;
+            activeItem.classList.remove('swiping', 'swipe-ready');
+            activeItem.style.transform = '';
+            if (activePointerId !== null && activeItem.hasPointerCapture?.(activePointerId)) {
+                try { activeItem.releasePointerCapture(activePointerId); } catch (_) {}
+            }
+            activeItem = null;
+            activePointerId = null;
+            currentDeltaX = 0;
+            isHorizontalSwipe = null;
+            hasVibrated = false;
+        };
+
+        container.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            const item = e.target.closest('.dash-item[data-id]');
+            if (!item) return;
+
+            activeItem = item;
+            activePointerId = e.pointerId;
+            startX = e.clientX;
+            startY = e.clientY;
+            currentDeltaX = 0;
+            isHorizontalSwipe = null;
+            hasVibrated = false;
+        });
+
+        container.addEventListener('pointermove', (e) => {
+            if (!activeItem || e.pointerId !== activePointerId) return;
+
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+
+            if (isHorizontalSwipe === null) {
+                if (Math.hypot(deltaX, deltaY) < DEADZONE_PX) return;
+
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    isHorizontalSwipe = true;
+                    activeItem.classList.add('swiping');
+                    try { activeItem.setPointerCapture(e.pointerId); } catch (_) {}
+                } else {
+                    isHorizontalSwipe = false;
+                    resetSwipeVisuals();
+                    return;
+                }
+            }
+
+            if (!isHorizontalSwipe) return;
+
+            currentDeltaX = deltaX;
+            const clampedX = Math.max(-MAX_TRANSLATE_PX, Math.min(MAX_TRANSLATE_PX, deltaX));
+            activeItem.style.transform = `translate3d(${clampedX}px, 0, 0)`;
+
+            if (Math.abs(deltaX) >= SWIPE_THRESHOLD_PX) {
+                activeItem.classList.add('swipe-ready');
+                if (!hasVibrated) {
+                    if (navigator.vibrate) navigator.vibrate(15);
+                    hasVibrated = true;
+                }
+            } else {
+                activeItem.classList.remove('swipe-ready');
+                hasVibrated = false;
+            }
+        });
+
+        container.addEventListener('pointerup', (e) => {
+            if (!activeItem || e.pointerId !== activePointerId) return;
+
+            const item = activeItem;
+            const finalDeltaX = currentDeltaX;
+            const wasHorizontal = isHorizontalSwipe === true;
+
+            resetSwipeVisuals();
+
+            if (wasHorizontal && Math.abs(finalDeltaX) >= SWIPE_THRESHOLD_PX) {
+                lastSwipeTimestamp = performance.now();
+                const verseId = Number(item.getAttribute('data-id'));
+                localStorage.setItem('neuroBibleSwipeDiscovered', 'true');
+
+                requestAnimationFrame(() => {
+                    startFlashcardFromDash(verseId, true);
+                });
+            }
+        });
+
+        container.addEventListener('pointercancel', () => {
+            resetSwipeVisuals();
+        });
+
+        container.addEventListener('click', (e) => {
+            if (performance.now() - lastSwipeTimestamp < 450) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            const item = e.target.closest('.dash-item[data-id]');
+            if (!item) return;
+
+            const verseId = Number(item.getAttribute('data-id'));
+            startFlashcardFromDash(verseId, false);
+        });
+    });
+}
+
+function maybeShowSwipeHint(totalActiveCards) {
+    if (swipeHintShownThisSession || totalActiveCards === 0) return;
+    if (localStorage.getItem('neuroBibleSwipeDiscovered') === 'true') {
+        swipeHintShownThisSession = true;
+        return;
+    }
+
+    const views = Number(localStorage.getItem('neuroBibleSwipeHintCount') || '0');
+    swipeHintShownThisSession = true;
+
+    if (views < 2) {
+        localStorage.setItem('neuroBibleSwipeHintCount', String(views + 1));
+        setTimeout(() => {
+            showToast("💡 Dica: Já sabe de cor? Arraste o card para o lado para ir direto à resposta!", "success");
+        }, 2200);
+    }
 }
 
 export function renderFavorableDayCard() {
@@ -873,7 +1024,9 @@ export function toggleHistory() {
 }
 
 export function filterHistory(event) {
-    const term = event.target.value.toLowerCase();
+    const inputEl = event?.target || document.getElementById('searchHistory');
+    if (!inputEl) return;
+    const term = inputEl.value.toLowerCase();
     const rows = document.querySelectorAll('#historyTableBody tr');
     if (!rows) return;
     

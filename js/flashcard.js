@@ -113,14 +113,20 @@ export function openDailyReview(dateStr) {
     modal.style.display = 'flex';
 }
 
-export function startFlashcard(verseId) {
+export function startFlashcard(verseId, skipToAnswer = false) {
     setCurrentReviewId(verseId);
     const verse = appData.verses.find(v => v.id === verseId);
     if (!verse) return;
 
     document.getElementById('reviewListContainer').style.display = 'none';
     document.getElementById('flashcardContainer').style.display = 'block';
-    document.getElementById('flashcardInner').classList.remove('is-flipped');
+    
+    const flashcardInner = document.getElementById('flashcardInner');
+    if (skipToAnswer) {
+        flashcardInner.classList.add('is-flipped');
+    } else {
+        flashcardInner.classList.remove('is-flipped');
+    }
     
     document.getElementById('cardRef').innerText = verse.ref; 
     document.getElementById('cardRefBack').innerText = verse.ref; 
@@ -188,12 +194,12 @@ export function advanceStage() {
     updateHintButtonUI();
 }
 
-export function startFlashcardFromDash(id) {
+export function startFlashcardFromDash(id, skipToAnswer = false) {
     const listEl = document.getElementById('reviewList');
     if (listEl) listEl.innerHTML = ''; 
     
     document.getElementById('reviewModal').style.display = 'flex';
-    startFlashcard(id);
+    startFlashcard(id, skipToAnswer);
 }
 
 // --- INTERACTION & GAMIFICATION LOGIC ---
