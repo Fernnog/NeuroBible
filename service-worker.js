@@ -1,6 +1,6 @@
-// service-worker.js - V1.3.0 (CSS Split & Refatoração)
+// service-worker.js - V1.4.2 (Swipe UX & Mobile Ergonomics)
 
-const CACHE_NAME = 'neurobible-v1.3.0-CSS-SPLIT';
+const CACHE_NAME = 'neurobible-v1.4.2-SWIPE-UX';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -27,8 +27,9 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('[Service Worker] Caching modular assets (v1.3.0)');
-                return cache.addAll(ASSETS_TO_CACHE);
+                console.log('[Service Worker] Caching modular assets (v1.4.2) with HTTP cache bypass');
+                const freshRequests = ASSETS_TO_CACHE.map(url => new Request(url, { cache: 'reload' }));
+                return cache.addAll(freshRequests);
             })
     );
     self.skipWaiting();

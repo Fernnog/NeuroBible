@@ -8,127 +8,6 @@
     
     <link rel="stylesheet" href="css/structure.css">
     <link rel="stylesheet" href="css/components.css">
-    
-    <style>
-        /* Cross-fade Animation Classes */
-        .card-content-hidden {
-            opacity: 0;
-            transform: translateY(5px);
-            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-        }
-        #cardTextContent {
-            transition: opacity 0.2s ease-in, transform 0.2s ease-in;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Container de Botões Dinâmicos */
-        .hint-controls-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            gap: 5px;
-            min-height: 50px; /* Evita pulo de layout */
-            justify-content: center;
-        }
-
-        /* Botão Ghost para UX Secundária */
-        .btn-ghost-accent {
-            background: transparent;
-            border: none;
-            color: var(--accent);
-            font-size: 0.85rem;
-            cursor: pointer;
-            opacity: 0.8;
-            text-decoration: underline;
-            text-decoration-style: dotted;
-            padding: 5px 10px;
-            transition: all 0.2s;
-        }
-        .btn-ghost-accent:hover {
-            opacity: 1;
-            background: rgba(52, 152, 219, 0.1);
-            border-radius: 4px;
-        }
-
-        /* ESTILOS GAMIFICATION v1.2.9 */
-        /* Pílula Minimalista do Topo */
-        .level-pill {
-            position: absolute;
-            right: 100%; /* Fica à esquerda do botão de ritmo */
-            top: 50%;
-            transform: translateY(-50%);
-            margin-right: 10px;
-            width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center;
-            background: var(--white);
-            border-radius: 50%;
-            border: 1px solid var(--border);
-            font-size: 1.2rem;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
-            z-index: 5;
-        }
-        .level-pill:hover {
-            border-color: var(--accent);
-            transform: translateY(-50%) scale(1.1);
-        }
-        .level-pill.levelup {
-            animation: levelUpPulse 1.5s infinite;
-            border-color: #f1c40f;
-        }
-
-        @keyframes levelUpPulse {
-            0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
-        }
-
-        /* Barra de XP e Legenda */
-        .xp-bar-bg {
-            width: 100%; height: 10px;
-            background-color: var(--hover-bg);
-            border-radius: 5px; overflow: hidden;
-            border: 1px solid var(--border);
-        }
-        .xp-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), #9b59b6);
-            border-radius: 5px;
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .level-legend-box {
-            background: var(--hover-bg);
-            border-radius: 8px; padding: 15px;
-            border: 1px solid var(--border);
-        }
-        .legend-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
-        .legend-item {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.9rem; color: var(--text); padding: 6px;
-            border-radius: 4px; background: var(--white);
-            border: 1px solid transparent;
-        }
-        .l-icon { font-size: 1.1rem; }
-        .legend-item small { color: var(--accent); margin-left: auto; font-weight: bold; }
-
-        /* NOVAS CLASSES DE VARIANTES DE PAINEL v1.3.4 (Identidade de Alerta) */
-        .overdue-variant {
-            border: 1.5px solid #c0392b !important; /* Borda Vermelha de Alerta */
-            background: linear-gradient(135deg, var(--white) 0%, #f9ebea 100%) !important; /* Fundo avermelhado suave */
-            margin-bottom: 25px;
-        }
-        .mission-variant {
-            border: 1px solid var(--accent);
-            margin-bottom: 25px;
-        }
-        /* Ajuste de espaçamento para o Badge de Interação */
-        .dash-item.has-badge {
-            padding-right: 52px !important;
-        }
-    </style>
 
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
@@ -155,7 +34,7 @@
 
 <div class="container">
     <header>
-        <div class="brand-area">
+        <div class="brand-area" onclick="window.openChangelog()" title="Ver histórico de atualizações">
             <div class="logo-frame">
                 <img src="images/logo.png" alt="NeuroBible Logo">
             </div>
@@ -166,12 +45,6 @@
         </div>
         
         <div class="top-controls">
-            <div class="version-pill" onclick="window.openChangelog()" title="Ver novidades">
-                <span id="currentVersion">v1.3.4</span>
-            </div>
-
-            <div class="separator"></div>
-
             <div class="pacing-wrapper">
                 <div id="levelBadge" class="level-pill" onclick="window.openGamificationModal()" title="Ver minha jornada">
                     <span id="lvlIcon">🌱</span>
@@ -186,7 +59,7 @@
 
                 <button id="btnPacing" class="btn-icon pacing-btn" onclick="window.openPlanModal()" title="Gerenciar Ritmo">
                     <div class="icon-inner">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
                 </button>
                 <div id="streakBadge" class="streak-badge" title="Dias consecutivos">
@@ -196,12 +69,12 @@
             </div>
 
             <button id="btnRadar" class="btn-icon" onclick="window.openRadarModal()" title="Radar de Carga">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                 <span class="notification-dot"></span>
             </button>
             
             <button id="btnAuth" class="btn-icon" onclick="window.openAuthModal()" title="Minha Conta">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span id="authStatusDot" class="notification-dot" style="background-color: #ccc; display: block;"></span>
             </button>
         </div>
