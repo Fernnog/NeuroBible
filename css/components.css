@@ -35,6 +35,12 @@
     border-color: var(--accent);
 }
 
+.top-controls .btn-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+}
+
 .btn-small {
     padding: 5px 10px; font-size: 0.8rem;
     background: var(--hover-bg);
@@ -95,15 +101,6 @@
 /* =========================================
    2. BADGES & PILLS
    ========================================= */
-.version-pill {
-    font-size: 0.75rem; color: #999;
-    background: var(--hover-bg); padding: 4px 10px;
-    border-radius: 12px; cursor: pointer;
-    font-family: monospace; transition: all 0.2s;
-    border: 1px solid transparent;
-}
-.version-pill:hover { background: var(--border); color: var(--text); }
-
 .notification-dot {
     position: absolute; top: -2px; right: -2px;
     width: 10px; height: 10px;
@@ -156,15 +153,25 @@
 
 /* Level Pill Minimalista */
 .level-pill {
-    position: absolute; right: 100%; top: 50%;
-    transform: translateY(-50%); margin-right: 12px;
-    width: 32px; height: 32px;
-    display: flex; align-items: center; justify-content: center;
+    position: absolute; 
+    right: 100%; 
+    top: 50%;
+    transform: translateY(-50%); 
+    margin-right: 12px;
+    width: 38px; 
+    height: 38px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
     background: var(--white);
-    border-radius: 50%; border: 1px solid var(--border);
-    font-size: 1.1rem; cursor: pointer;
+    border-radius: 50%; 
+    border: 1px solid var(--border);
+    font-size: 1.25rem; 
+    cursor: pointer;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    transition: all 0.2s ease; z-index: 5; user-select: none;
+    transition: all 0.2s ease; 
+    z-index: 5; 
+    user-select: none;
 }
 .level-pill:hover {
     border-color: var(--accent);
@@ -217,19 +224,42 @@
     border: 1px solid var(--border);
     padding: 12px; 
     border-radius: 8px;
-    display: flex; justify-content: space-between; align-items: center;
-    cursor: pointer; transition: 0.2s; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    cursor: pointer; 
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s, background-color 0.2s, box-shadow 0.2s; 
     color: var(--text);
-    position: relative; overflow: visible !important; 
-}
-.dash-item:hover {
-    border-color: var(--accent); transform: translateX(5px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative; 
+    overflow: visible !important; 
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    will-change: transform;
 }
 
-/* Espaçamento Seguro para Badges (Evita sobreposição) */
+@media (hover: hover) and (pointer: fine) {
+    .dash-item:hover {
+        border-color: var(--accent); 
+        transform: translateX(5px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+}
+
+.dash-item.swiping {
+    transition: none !important;
+    z-index: 20;
+}
+
+.dash-item.swipe-ready {
+    border-color: #27ae60 !important;
+    background-color: var(--success-bg) !important;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.25) !important;
+}
+
+/* Espaçamento Seguro para Badges preservado em 52px */
 .dash-item.has-badge {
-    padding-right: 48px !important;
+    padding-right: 52px !important;
 }
 
 /* Variantes de Painel */
@@ -259,6 +289,7 @@
 
 .mission-variant {
     border: 1px solid var(--accent) !important;
+    margin-bottom: 25px;
 }
 
 /* Estado de Conclusão Missão do Dia */
@@ -404,6 +435,17 @@
     color: var(--primary); font-size: 1.4rem; line-height: 1.6;
 }
 
+.card-content-hidden {
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+#cardTextContent {
+    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .flashcard-back {
     background-color: var(--primary); color: var(--white);
     transform: rotateY(180deg); border-color: var(--primary);
@@ -491,13 +533,19 @@
 }
 
 .pacing-wrapper {
-    position: relative; display: inline-flex; 
-    justify-content: center; margin-left: 45px; 
+    position: relative; 
+    display: inline-flex; 
+    justify-content: center; 
+    margin-left: 50px; /* 38px da .level-pill + 12px de margin-right */
 }
 .pacing-btn {
-    position: relative; border: 2px solid var(--border);
-    transition: all 0.3s ease; width: 74px; 
-    border-radius: 12px; padding: 0; 
+    position: relative; 
+    border: 2px solid var(--border);
+    transition: all 0.3s ease; 
+    width: 82px; 
+    height: 46px;
+    border-radius: 12px; 
+    padding: 0; 
 }
 .pacing-btn .icon-inner {
     display: flex; align-items: center; justify-content: center;

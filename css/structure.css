@@ -70,7 +70,8 @@ header {
 .brand-area {
     display: flex;
     align-items: center;
-    gap: 15px; 
+    gap: 15px;
+    cursor: pointer;
 }
 
 .brand-text {
@@ -81,10 +82,10 @@ header {
 .brand-area h1 { margin: 0; font-size: 1.5rem; color: var(--primary); line-height: 1.1; }
 .brand-area small { color: var(--accent); font-weight: 500; font-size: 0.85rem; }
 
-.top-controls { display: flex; gap: 10px; align-items: center; }
-
-.separator {
-    width: 1px; height: 24px; background-color: var(--border); margin: 0 5px;
+.top-controls { 
+    display: flex; 
+    gap: 16px; 
+    align-items: center; 
 }
 
 /* =========================================
@@ -269,15 +270,12 @@ td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); 
     }
     .top-controls {
         width: 100%;
-        justify-content: space-between; 
+        justify-content: space-around; 
+        padding: 6px 0 2px 0;
     }
     .form-grid {
         grid-template-columns: 1fr; 
         gap: 10px;
     }
     .search-wrapper input:focus { width: 120px; }
-    
-    .pacing-wrapper {
-        margin-left: 0; 
-    }
 }
